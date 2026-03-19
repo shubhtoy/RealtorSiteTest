@@ -86,7 +86,7 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <EditableContentProvider>
         <AppContent showPreloader={showPreloader} />
       </EditableContentProvider>
