@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ export const StickyScroll = ({
   contentClassName?: string;
 }) => {
   const [activeCard, setActiveCard] = React.useState(0);
+  const [activeIndexProgress, setActiveIndexProgress] = useState(0);
   const ref = useRef<HTMLDivElement | null>(null);
   const stickyMediaRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -66,7 +67,8 @@ export const StickyScroll = ({
         return;
       }
 
-      const startDelayProgress = 0.06;
+      // Require each card to travel a bit further before activation.
+      const triggerOffsetPx = 140;
       const scrollRange = Math.max(1, container.offsetHeight);
       const stickyMedia = stickyMediaRef.current;
       const defaultActivationY = 96 + 160;
@@ -80,9 +82,9 @@ export const StickyScroll = ({
         }
 
         const itemCenterInContainer = item.offsetTop + item.offsetHeight / 2;
-        const progressAtActivation = (itemCenterInContainer - activationY) / scrollRange;
+        const progressAtActivation = (itemCenterInContainer + triggerOffsetPx - activationY) / scrollRange;
 
-        return Math.min(1, Math.max(0, progressAtActivation + startDelayProgress));
+        return Math.min(1, Math.max(0, progressAtActivation));
       });
 
       checkpointsRef.current = nextCheckpoints;
@@ -117,27 +119,39 @@ export const StickyScroll = ({
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     const length = cardLengthRef.current;
     if (length <= 1) {
+      setActiveIndexProgress(0);
       setActiveCard(0);
       return;
     }
 
     const points = checkpointsRef.current;
-    let nextIndex = 0;
+    let nextIndexProgress = 0;
 
     if (points.length === length) {
-      for (let i = 0; i < points.length; i += 1) {
-        if (latest >= points[i]) {
-          nextIndex = i;
-        } else {
-          break;
+      if (latest <= points[0]) {
+        nextIndexProgress = 0;
+      } else if (latest >= points[length - 1]) {
+        nextIndexProgress = length - 1;
+      } else {
+        for (let i = 0; i < points.length - 1; i += 1) {
+          const start = points[i];
+          const end = points[i + 1];
+          if (latest >= start && latest <= end) {
+            const segmentSize = Math.max(0.0001, end - start);
+            const segmentProgress = (latest - start) / segmentSize;
+            nextIndexProgress = i + segmentProgress;
+            break;
+          }
         }
       }
     } else {
-      nextIndex = Math.floor(latest * length);
+      nextIndexProgress = latest * (length - 1);
     }
 
-    nextIndex = Math.min(length - 1, Math.max(0, nextIndex));
+    nextIndexProgress = Math.min(length - 1, Math.max(0, nextIndexProgress));
+    const nextIndex = Math.min(length - 1, Math.max(0, Math.round(nextIndexProgress)));
 
+    setActiveIndexProgress(nextIndexProgress);
     setActiveCard((prev) => (prev === nextIndex ? prev : nextIndex));
   });
 
@@ -154,6 +168,13 @@ export const StickyScroll = ({
 
   const activeGradient = linearGradients[activeCard % linearGradients.length] ?? linearGradients[0];
 
+  const syncTransition = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
+
+  const getBlendWeight = (index: number) => {
+    const distance = Math.abs(activeIndexProgress - index);
+    return Math.max(0, 1 - distance);
+  };
+
   const renderStackedContent = () => {
     if (cardLength === 0) {
       return null;
@@ -164,8 +185,8 @@ export const StickyScroll = ({
         key={item.title + index}
         className="absolute inset-0"
         initial={false}
-        animate={{ opacity: activeCard === index ? 1 : 0 }}
-        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+        animate={{ opacity: getBlendWeight(index) }}
+        transition={syncTransition}
         style={{ pointerEvents: activeCard === index ? "auto" : "none" }}
       >
         {item.content ?? null}
@@ -203,9 +224,9 @@ export const StickyScroll = ({
               <motion.h2
                 initial={false}
                 animate={{
-                  opacity: activeCard === index ? 1 : 0.22,
+                  opacity: 0.22 + getBlendWeight(index) * 0.78,
                 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                transition={syncTransition}
                 className="text-2xl font-semibold text-foreground"
               >
                 {item.title}
@@ -213,9 +234,9 @@ export const StickyScroll = ({
               <motion.p
                 initial={false}
                 animate={{
-                  opacity: activeCard === index ? 1 : 0.22,
+                  opacity: 0.22 + getBlendWeight(index) * 0.78,
                 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                transition={syncTransition}
                 className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground"
               >
                 {item.description}

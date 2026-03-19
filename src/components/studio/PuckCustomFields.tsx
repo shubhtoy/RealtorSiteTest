@@ -18,6 +18,8 @@ type ObjectFieldSchema = {
   key: string;
   label: string;
   placeholder?: string;
+  type?: "text" | "textarea" | "number" | "select";
+  options?: string[];
 };
 
 type GalleryItem = {
@@ -135,7 +137,11 @@ export function keyValueField(label: string) {
   };
 }
 
-export function objectListField(label: string, schema: ObjectFieldSchema[]) {
+export function objectListField(
+  label: string,
+  schema: ObjectFieldSchema[],
+  createDefaultItem?: () => Record<string, unknown>,
+) {
   return {
     type: "custom" as const,
     label,
@@ -143,9 +149,19 @@ export function objectListField(label: string, schema: ObjectFieldSchema[]) {
       const list = Array.isArray(safeParse<unknown>(value, [])) ? (safeParse<any[]>(value, []) as any[]) : [];
 
       const makeItem = () => {
+        if (createDefaultItem) {
+          return createDefaultItem();
+        }
+
         const base: Record<string, string> = {};
         schema.forEach((field) => {
-          base[field.key] = "";
+          if (field.type === "number") {
+            base[field.key] = "0";
+          } else if (field.type === "select") {
+            base[field.key] = field.options?.[0] ?? "";
+          } else {
+            base[field.key] = "";
+          }
         });
         return base;
       };
@@ -176,16 +192,45 @@ export function objectListField(label: string, schema: ObjectFieldSchema[]) {
               {schema.map((field) => (
                 <div key={field.key}>
                   <span className={miniLabel}>{field.label}</span>
-                  <input
-                    className={inputCls}
-                    placeholder={field.placeholder || ""}
-                    value={String(item?.[field.key] ?? "")}
-                    onChange={(event) => {
-                      const next = [...list];
-                      next[index] = { ...(next[index] || {}), [field.key]: event.target.value };
-                      commit(next);
-                    }}
-                  />
+                  {field.type === "textarea" ? (
+                    <textarea
+                      className={inputCls}
+                      placeholder={field.placeholder || ""}
+                      rows={3}
+                      value={String(item?.[field.key] ?? "")}
+                      onChange={(event) => {
+                        const next = [...list];
+                        next[index] = { ...(next[index] || {}), [field.key]: event.target.value };
+                        commit(next);
+                      }}
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      className={inputCls}
+                      value={String(item?.[field.key] ?? field.options?.[0] ?? "")}
+                      onChange={(event) => {
+                        const next = [...list];
+                        next[index] = { ...(next[index] || {}), [field.key]: event.target.value };
+                        commit(next);
+                      }}
+                    >
+                      {(field.options ?? []).map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type === "number" ? "number" : "text"}
+                      className={inputCls}
+                      placeholder={field.placeholder || ""}
+                      value={String(item?.[field.key] ?? "")}
+                      onChange={(event) => {
+                        const next = [...list];
+                        next[index] = { ...(next[index] || {}), [field.key]: event.target.value };
+                        commit(next);
+                      }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
