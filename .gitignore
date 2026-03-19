@@ -77,6 +77,8 @@ pnpm-lock.yaml
 
 # Local cleanup staging
 /.trash
+/.agents
+/memories
 
 # Testing
 /junit.xml
