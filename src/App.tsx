@@ -33,6 +33,7 @@ function AppContent({ showPreloader }: { showPreloader: boolean }) {
           element={<Suspense fallback={<RouteFallback />}><StudioPage /></Suspense>}
         />
         <Route path="/edit" element={<Navigate to="/studio" replace />} />
+        <Route path="/edit/studio" element={<Navigate to="/studio" replace />} />
         <Route path="/edit/gallery" element={<Navigate to="/studio" replace />} />
         <Route path="/edit/contact" element={<Navigate to="/studio" replace />} />
         <Route path="/admin/config" element={<Navigate to="/studio" replace />} />
