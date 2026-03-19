@@ -5,8 +5,10 @@ import path from "path";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const apiOrigin = env.VITE_API_ORIGIN || "http://localhost:8787";
+  const basePath = env.VITE_BASE_PATH || "/";
 
   return {
+    base: basePath,
     plugins: [react()],
     server: {
       proxy: {
