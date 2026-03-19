@@ -16,6 +16,7 @@ import { AdminAuthService } from "@/lib/admin-auth";
 import { STUDIO_PASSWORD, STUDIO_PASSWORD_ENV_HINT } from "@/config/studio-auth";
 import { coerceEditableSiteDocument, validateEditableSiteDocument } from "@/lib/editable-content-store";
 import { PuckDataService } from "@/lib/puck-data";
+import { resolveAppHref } from "@/lib/utils";
 
 const ADMIN_AUTH_STORAGE_KEY = "baba.admin.studio.basic";
 
@@ -170,7 +171,7 @@ export default function StudioPage() {
             <section className="relative overflow-hidden rounded-2xl border border-border shadow-soft">
               <div
                 className="pointer-events-none absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${props?.heroImage ?? "/images/exterior.jpg"})` }}
+                style={{ backgroundImage: `url(${resolveAppHref(props?.heroImage ?? "/images/exterior.jpg")})` }}
               />
               <div className="pointer-events-none absolute inset-0 bg-hero-fade" />
               <div className="relative z-10 p-6 md:p-8">
@@ -222,7 +223,7 @@ export default function StudioPage() {
             <section className="relative overflow-hidden rounded-2xl border border-border shadow-soft">
               <div
                 className="pointer-events-none absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${props?.heroImage ?? "/images/exterior.jpg"})` }}
+                style={{ backgroundImage: `url(${resolveAppHref(props?.heroImage ?? "/images/exterior.jpg")})` }}
               />
               <div className="pointer-events-none absolute inset-0 bg-hero-fade" />
               <div className="relative z-10 grid gap-4 p-6 md:grid-cols-[1fr_280px] md:items-end md:p-8">
@@ -389,7 +390,7 @@ export default function StudioPage() {
                       {floorPlans.slice(0, 2).map((item, idx) => (
                         <div key={`${item.title}-${idx}`} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background p-2">
                           <div className="h-10 w-14 overflow-hidden rounded bg-secondary">
-                            {item.image ? <img src={item.image} alt={item.title} className="h-full w-full object-cover" /> : null}
+                            {item.image ? <img src={resolveAppHref(item.image)} alt={item.title} className="h-full w-full object-cover" /> : null}
                           </div>
                           <div className="min-w-0 flex-1 text-xs">
                             <p className="truncate font-semibold text-foreground">{item.title}</p>
@@ -495,7 +496,7 @@ export default function StudioPage() {
                   {items.slice(0, 6).map((item, idx) => (
                     <div key={`${item.label}-${idx}`} className="overflow-hidden rounded-lg border border-border/70 bg-background/50">
                       <div className="h-20 bg-secondary">
-                        {item.src ? <img src={item.src} alt={item.alt || item.label} className="h-full w-full object-cover" /> : null}
+                        {item.src ? <img src={resolveAppHref(item.src)} alt={item.alt || item.label} className="h-full w-full object-cover" /> : null}
                       </div>
                       <div className="p-2">
                         <p className="truncate text-xs font-semibold text-foreground">{item.label}</p>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactElement } from "react";
 import PhotoAlbum from "react-photo-album";
 import { STUDIO_PASSWORD } from "@/config/studio-auth";
+import { resolveAppHref } from "@/lib/utils";
 
 const miniLabel = "mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500";
 const inputCls = "w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm";
@@ -681,7 +682,7 @@ function GalleryManagerRenderer({
                   <div style={{ display: "grid", gridTemplateColumns: "88px 1fr", gap: 8 }}>
                     <div style={{ width: 88, height: 64, borderRadius: 6, overflow: "hidden", border: "1px solid #e5e7eb", background: "#f8fafc" }}>
                       {item.src ? (
-                        <img src={item.src} alt={item.alt || item.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={resolveAppHref(item.src)} alt={item.alt || item.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : null}
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -717,7 +718,7 @@ function GalleryManagerRenderer({
             <>
               <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", background: "#f8fafc" }}>
                 {draftItem.src ? (
-                  <img src={draftItem.src} alt={draftItem.alt || draftItem.label} style={{ width: "100%", height: 170, objectFit: "cover" }} />
+                  <img src={resolveAppHref(draftItem.src)} alt={draftItem.alt || draftItem.label} style={{ width: "100%", height: 170, objectFit: "cover" }} />
                 ) : (
                   <div style={{ height: 170 }} />
                 )}
