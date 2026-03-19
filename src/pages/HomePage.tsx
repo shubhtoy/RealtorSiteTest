@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { OptimizedImage } from "@/components/media/OptimizedImage";
 import { Building2, CarFront, PawPrint, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 import { useEditableContent } from "@/context/EditableContentContext";
+import { resolveAppHref } from "@/lib/utils";
 
 function StatCounter({ value, suffix, label }: { value: number; suffix: string; label: string }) {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.25 });
@@ -390,7 +391,7 @@ export default function HomePage() {
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
-                  href={home.finalCta.primary.link}
+                  href={resolveAppHref(home.finalCta.primary.link)}
                   className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
                 >
                   {home.ui.faqHelpPrimaryLabel}
@@ -465,7 +466,7 @@ export default function HomePage() {
             <Separator className="my-5" />
             <div className="flex flex-wrap gap-3">
               <a
-                href={home.finalCta.primary.link}
+                href={resolveAppHref(home.finalCta.primary.link)}
                 className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg"
               >
                 {home.finalCta.primary.text}
@@ -484,7 +485,7 @@ export default function HomePage() {
       {home.sectionVisibility.mobileBar ? <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden">
         <div className="mx-auto flex w-[min(560px,96vw)] gap-2">
           <a
-            href={home.finalCta.primary.link}
+            href={resolveAppHref(home.finalCta.primary.link)}
             className="flex-1 rounded-full bg-primary px-4 py-3 text-center text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
           >
             {home.ui.mobilePrimaryLabel}

@@ -8,6 +8,7 @@ import {
   MotionValue,
 } from "motion/react";
 import { OptimizedImage } from "@/components/media/OptimizedImage";
+import { resolveAppHref } from "@/lib/utils";
 
 
 
@@ -154,7 +155,7 @@ export const ProductCard = ({
       className={cn("group/product relative h-80 w-[24rem] shrink-0 md:h-96 md:w-[28rem]", className)}
     >
       <a
-        href={product.link}
+        href={resolveAppHref(product.link)}
         className="block overflow-hidden rounded-2xl border border-white/20 group-hover/product:shadow-2xl"
       >
         <OptimizedImage

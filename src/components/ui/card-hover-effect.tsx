@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { resolveAppHref } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 
 import { useState } from "react";
@@ -25,7 +26,7 @@ export const HoverEffect = ({
     >
       {items.map((item, idx) => (
         <a
-          href={item?.link}
+          href={resolveAppHref(item?.link ?? "")}
           key={`${item?.link}-${item?.title}-${idx}`}
           className="relative group  block p-2 h-full w-full"
           onMouseEnter={() => setHoveredIndex(idx)}

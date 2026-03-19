@@ -10,6 +10,7 @@ import { Reveal } from "../components/motion";
 import { setPageMeta } from "../lib/seo";
 import { OptimizedImage } from "@/components/media/OptimizedImage";
 import { useEditableContent } from "@/context/EditableContentContext";
+import { resolveAppHref } from "@/lib/utils";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/captions.css";
 import "yet-another-react-lightbox/plugins/counter.css";
@@ -136,7 +137,7 @@ export default function GalleryPage() {
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
-                  href={current.gallery.cta.primary.link}
+                  href={resolveAppHref(current.gallery.cta.primary.link)}
                   className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg"
                 >
                   {current.gallery.cta.primary.text}
