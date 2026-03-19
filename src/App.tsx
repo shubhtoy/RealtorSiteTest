@@ -5,11 +5,15 @@ import SitePreloader from "./components/SitePreloader";
 import SiteFooter from "./components/SiteFooter";
 import SiteHeader from "./components/SiteHeader";
 import { EditableContentProvider } from "./context/EditableContentContext";
-import ContactPage from "./pages/ContactPage";
-import GalleryPage from "./pages/GalleryPage";
-import HomePage from "./pages/HomePage";
+const HomePage = lazy(() => import("./pages/HomePage"));
+const GalleryPage = lazy(() => import("./pages/GalleryPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
 
 const StudioPage = lazy(() => import("./pages/StudioPage"));
+
+function RouteFallback() {
+  return <main className="mx-auto w-[min(1140px,92vw)] py-24 text-sm text-muted-foreground">Loading...</main>;
+}
 
 function AppContent({ showPreloader }: { showPreloader: boolean }) {
   const location = useLocation();
@@ -21,12 +25,12 @@ function AppContent({ showPreloader }: { showPreloader: boolean }) {
       {!isStudio ? <SiteHeader /> : null}
 
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
-        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/" element={<Suspense fallback={<RouteFallback />}><HomePage /></Suspense>} />
+        <Route path="/gallery" element={<Suspense fallback={<RouteFallback />}><GalleryPage /></Suspense>} />
+        <Route path="/contact" element={<Suspense fallback={<RouteFallback />}><ContactPage /></Suspense>} />
         <Route
           path="/studio"
-          element={<Suspense fallback={<main className="mx-auto w-[min(1140px,92vw)] py-24 text-sm text-muted-foreground">Loading studio...</main>}><StudioPage /></Suspense>}
+          element={<Suspense fallback={<RouteFallback />}><StudioPage /></Suspense>}
         />
         <Route path="/edit" element={<Navigate to="/studio" replace />} />
         <Route path="/edit/gallery" element={<Navigate to="/studio" replace />} />
@@ -46,7 +50,7 @@ export default function App() {
 
   useEffect(() => {
     let isCancelled = false;
-    const minShowMs = 1100;
+    const minShowMs = 700;
     let minTimer: ReturnType<typeof setTimeout> | undefined;
 
     const waitForMinimumTime = new Promise<void>((resolve) => {
