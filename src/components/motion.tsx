@@ -24,7 +24,7 @@ export function Reveal({
       whileInView="visible"
       viewport={{ once: true, amount: 0.15 }}
       transition={{
-        duration: reduced ? 0 : 0.6,
+        duration: reduced ? 0 : 0.38,
         delay: reduced ? 0 : delay,
         ease: [0.22, 1, 0.36, 1],
       }}
@@ -37,7 +37,7 @@ export function Reveal({
 export function StaggerContainer({
   children,
   className,
-  stagger = 0.1,
+  stagger = 0.06,
 }: {
   children: ReactNode;
   className?: string;
@@ -70,7 +70,7 @@ export function StaggerItem({
       className={className}
       variants={variants}
       transition={{
-        duration: reduced ? 0 : 0.55,
+        duration: reduced ? 0 : 0.34,
         ease: [0.22, 1, 0.36, 1],
       }}
     >
