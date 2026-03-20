@@ -41,6 +41,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_STUDIO_PASSWORD: ${{ secrets.VITE_STUDIO_PASSWORD }}
 
       - name: Add SPA Fallback
         run: cp dist/index.html dist/404.html
