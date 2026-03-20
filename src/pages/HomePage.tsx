@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { setPageMeta } from "@/lib/seo";
-import { Reveal } from "@/components/motion";
+import { Reveal } from "@/lib/motion";
 import { HeroParallax } from "@/components/ui/hero-parallax";
 import { FocusCards } from "@/components/ui/focus-cards";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
@@ -59,11 +59,12 @@ export default function HomePage() {
   const global = current.global;
 
   useEffect(() => {
-    setPageMeta(
-      `${global.siteName} ${global.seoTitleSuffix}`,
-      global.description,
-      "/",
-    );
+    setPageMeta({
+      title: `${global.siteName} ${global.seoTitleSuffix}`,
+      description: global.description,
+      canonicalPath: "/",
+      ogImage: "/images/banner.png",
+    });
   }, [global.description, global.seoTitleSuffix, global.siteName]);
 
   const amenitiesPanels = useMemo(
@@ -129,7 +130,7 @@ export default function HomePage() {
     "inline-flex items-center justify-center rounded-full border border-primary/45 px-5 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary transition hover:-translate-y-0.5 hover:bg-primary/10 sm:px-6 sm:py-3 sm:text-[0.68rem] sm:tracking-[0.16em]";
 
   return (
-    <main className="bg-body-mesh pb-20 md:pb-0">
+    <main id="main-content" className="bg-body-mesh pb-20 md:pb-0">
       <section className="relative overflow-hidden bg-background pb-6">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.18),transparent_72%)]" />
         <div className="relative z-30 mx-auto w-[min(1140px,92vw)] pt-14 md:pt-20">

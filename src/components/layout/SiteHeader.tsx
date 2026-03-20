@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Badge } from "@/components/ui/badge";
 import { useEditableContent } from "@/context/EditableContentContext";
 
@@ -8,6 +8,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function SiteHeader() {
   const { current } = useEditableContent();
+  const reduced = useReducedMotion();
   const navLinks = current.global.navLinks.map((link) => ({
     ...link,
     end: link.to === "/",
@@ -15,6 +16,7 @@ export default function SiteHeader() {
 
   return (
     <motion.header
+      role="banner"
       data-editable="site-header"
       data-props={JSON.stringify({
         siteName: current.global.siteName,
@@ -23,11 +25,17 @@ export default function SiteHeader() {
         navCtaText: current.global.navCtaText,
         navCtaLink: current.global.navCtaLink,
       })}
-      initial={{ y: -20, opacity: 0 }}
+      initial={reduced ? { y: 0, opacity: 1 } : { y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: reduced ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-xl"
     >
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:bg-background focus:px-4 focus:py-2 focus:text-foreground"
+      >
+        Skip to content
+      </a>
       <div className="mx-auto flex w-[min(1140px,92vw)] flex-wrap items-center justify-between gap-3 py-2.5 md:py-3">
         <Link to="/" className="flex items-center gap-2">
           <span data-prop="siteName" className="font-display text-xl tracking-tight text-primary sm:text-2xl">{current.global.siteName}</span>

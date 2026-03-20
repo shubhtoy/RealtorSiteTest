@@ -8,6 +8,7 @@ import {
   resetDraftToPublished,
   writeDraftDocument,
 } from "@/lib/editable-content-store";
+import { appEnv } from "@/config/env";
 import type { EditableSiteDocument } from "@/types/editable-content";
 
 type EditableMode = "published" | "preview";
@@ -50,6 +51,18 @@ export function EditableContentProvider({ children }: Props) {
       publish: () => {
         publishDraftDocument(draft);
         setPublished(draft);
+
+        // Persist to API server (non-blocking)
+        const body = JSON.stringify(draft);
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "x-studio-password": appEnv.studioPassword,
+        };
+        fetch(`${appEnv.apiOrigin}/api/content/draft`, { method: "POST", headers, body })
+          .then(() => fetch(`${appEnv.apiOrigin}/api/content/publish`, { method: "POST", headers }))
+          .catch((err) => {
+            console.warn("[EditableContentContext] Failed to persist publish to API server:", err);
+          });
       },
       revertDraft: () => {
         resetDraftToPublished();

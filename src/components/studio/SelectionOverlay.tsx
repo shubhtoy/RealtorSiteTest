@@ -35,6 +35,7 @@ export default function SelectionOverlay({ children }: SelectionOverlayProps) {
           const dataProps = editableElement.getAttribute('data-props');
           if (dataProps) {
             try {
+              // JSON.parse returns `any` — cast to `unknown` for safe narrowing
               const parsed = JSON.parse(dataProps) as unknown;
               if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
                 Object.assign(props, parsed);

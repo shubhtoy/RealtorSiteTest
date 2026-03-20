@@ -1,5 +1,8 @@
+import { toast } from "sonner";
 import { defaultEditableSiteDocument } from "@/lib/editable-content-defaults";
 import type { EditableSiteDocument } from "@/types/editable-content";
+
+export const CURRENT_DOCUMENT_VERSION = 1;
 
 const DRAFT_KEY = "baba.editableContent.draft";
 const PUBLISHED_KEY = "baba.editableContent.published";
@@ -187,6 +190,10 @@ export function coerceEditableSiteDocument(input: unknown): { document: Editable
     return { document: null, errors: ["payload is missing required top-level sections"] };
   }
 
+  if (isNumber(partial.version) && partial.version > CURRENT_DOCUMENT_VERSION) {
+    return { document: null, errors: ["Document version too new"] };
+  }
+
   const hydrated = hydrateDocument(partial);
   const validation = validateEditableSiteDocument(hydrated);
   return validation.valid ? { document: hydrated, errors: [] } : { document: null, errors: validation.errors };
@@ -296,20 +303,43 @@ function withUpdatedAt(document: EditableSiteDocument): EditableSiteDocument {
 
 export function readPublishedDocument(): EditableSiteDocument {
   if (typeof window === "undefined") return defaultEditableSiteDocument;
-  const parsed = parseDocument(window.localStorage.getItem(PUBLISHED_KEY));
+  const raw = window.localStorage.getItem(PUBLISHED_KEY);
+  const parsed = parseDocument(raw);
+  if (!parsed && raw !== null) {
+    console.warn("[editable-content-store] Failed to parse published document from localStorage; falling back to defaults.");
+  }
   return parsed ? hydrateDocument(parsed) : defaultEditableSiteDocument;
 }
 
 export function readDraftDocument(): EditableSiteDocument {
   if (typeof window === "undefined") return defaultEditableSiteDocument;
-  const parsed = parseDocument(window.localStorage.getItem(DRAFT_KEY));
-  return parsed ? hydrateDocument(parsed) : readPublishedDocument();
+  const raw = window.localStorage.getItem(DRAFT_KEY);
+  const parsed = parseDocument(raw);
+  if (!parsed) {
+    if (raw !== null) {
+      console.warn("[editable-content-store] Failed to parse draft document from localStorage; falling back to published/defaults.");
+    }
+    return readPublishedDocument();
+  }
+  const hydrated = hydrateDocument(parsed);
+  const validation = validateEditableSiteDocument(hydrated);
+  if (!validation.valid) {
+    console.warn("[editable-content-store] Draft document failed validation; falling back to published/defaults.", validation.errors);
+    return readPublishedDocument();
+  }
+  return hydrated;
 }
 
 export function writeDraftDocument(document: EditableSiteDocument) {
   if (typeof window === "undefined") return;
   const hydrated = hydrateDocument(document);
-  window.localStorage.setItem(DRAFT_KEY, JSON.stringify(withUpdatedAt(hydrated)));
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(withUpdatedAt(hydrated)));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      toast.warning("Storage quota exceeded. Draft preserved in memory only.");
+    }
+  }
 }
 
 export function publishDraftDocument(document: EditableSiteDocument) {

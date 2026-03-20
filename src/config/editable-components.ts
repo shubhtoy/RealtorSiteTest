@@ -10,6 +10,7 @@ function parseDataProps(element: HTMLElement): EditablePropMap {
   if (!dataProps) return {};
 
   try {
+    // JSON.parse returns `any` — cast to `unknown` for safe narrowing
     const parsed = JSON.parse(dataProps) as unknown;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return {};

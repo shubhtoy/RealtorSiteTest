@@ -10,7 +10,7 @@ const btnAdd = "rounded-md border border-slate-300 px-2 py-1 text-xs font-semibo
 type CustomFieldRenderer = {
   value: string;
   onChange: (v: string) => void;
-  field: any;
+  field: Record<string, unknown>;
   name: string;
   id: string;
 };
@@ -51,7 +51,7 @@ export function stringListField(label: string) {
     label,
     render: ({ value, onChange }: CustomFieldRenderer): ReactElement => {
       const list = Array.isArray(safeParse<unknown>(value, []))
-        ? (safeParse<unknown[]>(value, []) as unknown[]).map((item) => String(item ?? ""))
+        ? safeParse<unknown[]>(value, []).map((item) => String(item ?? ""))
         : [];
 
       const commit = (next: string[]) => commitJson(onChange, next);
@@ -147,7 +147,7 @@ export function objectListField(
     type: "custom" as const,
     label,
     render: ({ value, onChange }: CustomFieldRenderer): ReactElement => {
-      const list = Array.isArray(safeParse<unknown>(value, [])) ? (safeParse<any[]>(value, []) as any[]) : [];
+      const list = Array.isArray(safeParse<unknown>(value, [])) ? (safeParse<Record<string, unknown>[]>(value, []) as Record<string, unknown>[]) : [];
 
       const makeItem = () => {
         if (createDefaultItem) {
@@ -167,7 +167,7 @@ export function objectListField(
         return base;
       };
 
-      const commit = (next: any[]) => commitJson(onChange, next);
+      const commit = (next: Record<string, unknown>[]) => commitJson(onChange, next);
 
       return (
         <div style={{ display: "grid", gap: 10 }}>

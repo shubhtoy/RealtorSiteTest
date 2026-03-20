@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "motion/react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Reveal } from "../components/motion";
-import { setPageMeta } from "../lib/seo";
+import { Reveal } from "@/lib/motion";
+import { setPageMeta } from "@/lib/seo";
+import { validateField, validators } from "@/lib/validation";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,16 +28,46 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const fieldRules: Record<string, ReturnType<typeof validators.required>[]> = {
+    fullName: [validators.required("Full name")],
+    email: [validators.required("Email"), validators.email()],
+    phone: [validators.required("Phone"), validators.phone()],
+  };
+
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const handleBlur = (field: string) => () => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const error = validateField(form[field as keyof typeof form], fieldRules[field] ?? []);
+    setErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  const validateAll = (): boolean => {
+    const next: Record<string, string | null> = {};
+    let valid = true;
+    for (const field of Object.keys(fieldRules)) {
+      const error = validateField(form[field as keyof typeof form], fieldRules[field]);
+      next[field] = error;
+      if (error) valid = false;
+    }
+    setErrors(next);
+    setTouched({ fullName: true, email: true, phone: true });
+    return valid;
+  };
+
   useEffect(() => {
-    setPageMeta(
-      `Contact ${current.global.siteName} Leasing`,
-      `Request a tour, ask about availability, and contact the ${current.global.siteName} leasing team in ${current.global.cityLabel}.`,
-      "/contact",
-    );
+    setPageMeta({
+      title: `Contact ${current.global.siteName} Leasing`,
+      description: `Request a tour, ask about availability, and contact the ${current.global.siteName} leasing team in ${current.global.cityLabel}.`,
+      canonicalPath: "/contact",
+      ogImage: "/images/banner.png",
+    });
   }, [current.global.cityLabel, current.global.siteName]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validateAll()) return;
     setIsSubmitting(true);
 
     try {
@@ -66,7 +97,7 @@ export default function ContactPage() {
       setForm({ fullName: "", email: "", phone: "", bedroom: "2BR", moveIn: "Within 30 days", tourType: "In-person", message: "" });
     } catch {
       toast.error("Unable to send request", {
-        description: "API server is unavailable. Start the backend server and try again.",
+        description: "API server is unavailable. Please try again later.",
       });
     } finally {
       setIsSubmitting(false);
@@ -85,7 +116,7 @@ export default function ContactPage() {
   const labelCls = "text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-accent";
 
   return (
-    <main className="bg-body-mesh">
+    <main id="main-content" className="bg-body-mesh">
       {/* Hero */}
       {current.contact.sectionVisibility.hero ? <section ref={heroRef} className="relative min-h-[62svh] overflow-hidden md:min-h-[68svh]">
         <motion.div style={{ y: reduced ? 0 : heroY }} className="absolute inset-0 h-[115%] w-full">
@@ -159,24 +190,27 @@ export default function ContactPage() {
           <Reveal delay={0.12}>
             <form className="grid gap-4 rounded-2xl border border-border bg-panel-gradient p-6 shadow-soft" onSubmit={handleSubmit}>
               <div className="grid gap-1">
-                <Label className={labelCls}>{current.contact.ui.labels.fullName}</Label>
-                <Input className={inputCls} value={form.fullName} onChange={set("fullName")} type="text" required placeholder={current.contact.ui.placeholders.fullName} />
+                <Label htmlFor="fullName" className={labelCls}>{current.contact.ui.labels.fullName}</Label>
+                <Input id="fullName" className={inputCls} value={form.fullName} onChange={set("fullName")} onBlur={handleBlur("fullName")} type="text" required placeholder={current.contact.ui.placeholders.fullName} aria-describedby={errors.fullName && touched.fullName ? "fullName-error" : undefined} />
+                {touched.fullName && errors.fullName && <span id="fullName-error" className="text-xs text-red-500">{errors.fullName}</span>}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="grid gap-1">
-                  <Label className={labelCls}>{current.contact.ui.labels.email}</Label>
-                  <Input className={inputCls} value={form.email} onChange={set("email")} type="email" required placeholder={current.contact.ui.placeholders.email} />
+                  <Label htmlFor="email" className={labelCls}>{current.contact.ui.labels.email}</Label>
+                  <Input id="email" className={inputCls} value={form.email} onChange={set("email")} onBlur={handleBlur("email")} type="email" required placeholder={current.contact.ui.placeholders.email} aria-describedby={errors.email && touched.email ? "email-error" : undefined} />
+                  {touched.email && errors.email && <span id="email-error" className="text-xs text-red-500">{errors.email}</span>}
                 </div>
                 <div className="grid gap-1">
-                  <Label className={labelCls}>{current.contact.ui.labels.phone}</Label>
-                  <Input className={inputCls} value={form.phone} onChange={set("phone")} type="tel" required placeholder={current.contact.ui.placeholders.phone} />
+                  <Label htmlFor="phone" className={labelCls}>{current.contact.ui.labels.phone}</Label>
+                  <Input id="phone" className={inputCls} value={form.phone} onChange={set("phone")} onBlur={handleBlur("phone")} type="tel" required placeholder={current.contact.ui.placeholders.phone} aria-describedby={errors.phone && touched.phone ? "phone-error" : undefined} />
+                  {touched.phone && errors.phone && <span id="phone-error" className="text-xs text-red-500">{errors.phone}</span>}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="grid gap-1">
-                  <Label className={labelCls}>{current.contact.ui.labels.bedroomType}</Label>
+                  <Label htmlFor="bedroom" className={labelCls}>{current.contact.ui.labels.bedroomType}</Label>
                   <Select value={form.bedroom} onValueChange={setSelect("bedroom")}>
-                    <SelectTrigger className={inputCls}>
+                    <SelectTrigger id="bedroom" className={inputCls}>
                       <SelectValue placeholder="Select bedroom" />
                     </SelectTrigger>
                     <SelectContent>
@@ -189,9 +223,9 @@ export default function ContactPage() {
                   </Select>
                 </div>
                 <div className="grid gap-1">
-                  <Label className={labelCls}>{current.contact.ui.labels.moveIn}</Label>
+                  <Label htmlFor="moveIn" className={labelCls}>{current.contact.ui.labels.moveIn}</Label>
                   <Select value={form.moveIn} onValueChange={setSelect("moveIn")}>
-                    <SelectTrigger className={inputCls}>
+                    <SelectTrigger id="moveIn" className={inputCls}>
                       <SelectValue placeholder="Select move-in timeline" />
                     </SelectTrigger>
                     <SelectContent>
@@ -205,9 +239,9 @@ export default function ContactPage() {
                 </div>
               </div>
               <div className="grid gap-1">
-                <Label className={labelCls}>{current.contact.ui.labels.tourPreference}</Label>
+                <Label htmlFor="tourType" className={labelCls}>{current.contact.ui.labels.tourPreference}</Label>
                 <Select value={form.tourType} onValueChange={setSelect("tourType")}>
-                  <SelectTrigger className={inputCls}>
+                  <SelectTrigger id="tourType" className={inputCls}>
                     <SelectValue placeholder="Select tour preference" />
                   </SelectTrigger>
                   <SelectContent>
@@ -220,8 +254,8 @@ export default function ContactPage() {
                 </Select>
               </div>
               <div className="grid gap-1">
-                <Label className={labelCls}>{current.contact.ui.labels.message}</Label>
-                <Textarea value={form.message} onChange={set("message")} rows={4} placeholder={current.contact.ui.placeholders.message} />
+                <Label htmlFor="message" className={labelCls}>{current.contact.ui.labels.message}</Label>
+                <Textarea id="message" value={form.message} onChange={set("message")} rows={4} placeholder={current.contact.ui.placeholders.message} />
               </div>
               <button
                 type="submit"

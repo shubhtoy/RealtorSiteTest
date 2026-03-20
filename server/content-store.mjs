@@ -19,8 +19,12 @@ async function fileExists(filePath) {
 }
 
 async function readJson(filePath) {
-  const raw = await readFile(filePath, "utf-8");
-  return JSON.parse(raw);
+  try {
+    const raw = await readFile(filePath, "utf-8");
+    return JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Corrupted or unreadable JSON file: ${filePath} — ${err.message}`);
+  }
 }
 
 async function writeJson(filePath, value) {

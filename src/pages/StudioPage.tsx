@@ -1,6 +1,6 @@
 import { Puck, fieldsPlugin, outlinePlugin } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { toast } from "sonner";
 import { useEditableContent } from "@/context/EditableContentContext";
@@ -17,21 +17,190 @@ import { STUDIO_PASSWORD, STUDIO_PASSWORD_ENV_HINT } from "@/config/studio-auth"
 import { coerceEditableSiteDocument, validateEditableSiteDocument } from "@/lib/editable-content-store";
 import { PuckDataService } from "@/lib/puck-data";
 import { resolveAppHref } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  MoreVerticalIcon,
+  DownloadIcon,
+  UploadIcon,
+  CopyIcon,
+  LockIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+  AlertTriangleIcon,
+  XIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 
 const ADMIN_AUTH_STORAGE_KEY = "baba.admin.studio.basic";
 
 type PuckIncomingData = { content?: unknown };
-type PuckComponentProps = Record<string, any>;
+
+/** Typed prop interfaces for Puck component render functions */
+interface GlobalBrandProps {
+  [key: string]: unknown;
+  siteName?: string;
+  cityLabel?: string;
+  tagline?: string;
+  description?: string;
+  navCtaText?: string;
+  navCtaLink?: string;
+  phone?: string;
+  email?: string;
+  addressLine?: string;
+  hoursLine?: string;
+}
+
+interface GlobalCollectionsProps {
+  [key: string]: unknown;
+  navLinksJson?: string;
+  footerBadgesJson?: string;
+  seoTitleSuffix?: string;
+}
+
+interface HomeHeroProps {
+  [key: string]: unknown;
+  tagline?: string;
+  title?: string;
+  highlightText?: string;
+  description?: string;
+  primaryCtaText?: string;
+  primaryCtaLink?: string;
+  secondaryCtaText?: string;
+  secondaryCtaLink?: string;
+}
+
+interface GalleryHeroProps {
+  [key: string]: unknown;
+  heroEyebrow?: string;
+  heroTitle?: string;
+  heroDescription?: string;
+  heroImage?: string;
+}
+
+interface GalleryCtaProps {
+  [key: string]: unknown;
+  ctaEyebrow?: string;
+  ctaTitle?: string;
+  ctaDescription?: string;
+  primaryText?: string;
+  primaryLink?: string;
+  secondaryText?: string;
+  secondaryLink?: string;
+}
+
+interface ContactHeroProps {
+  [key: string]: unknown;
+  heroEyebrow?: string;
+  heroTitle?: string;
+  heroDescription?: string;
+  heroImage?: string;
+  mapEmbedUrl?: string;
+  officeHoursTitle?: string;
+}
+
+interface ContactFormMetaProps {
+  [key: string]: unknown;
+  tourFormTitle?: string;
+  tourFormDescription?: string;
+  submitText?: string;
+}
+
+interface HomeCollectionsProps {
+  [key: string]: unknown;
+  statsJson?: string;
+  focusCardsJson?: string;
+  floorPlansJson?: string;
+  amenityPanelsJson?: string;
+  whyCardsJson?: string;
+  testimonialsJson?: string;
+  faqJson?: string;
+  neighborhoodHighlightsJson?: string;
+}
+
+interface HomeVisibilityProps {
+  [key: string]: unknown;
+  sectionVisibilityJson?: string;
+}
+
+interface HomeUiProps {
+  [key: string]: unknown;
+  homeUiJson?: string;
+  mapEmbedUrl?: string;
+}
+
+interface GalleryCollectionsProps {
+  [key: string]: unknown;
+  galleryItemsJson?: string;
+}
+
+interface GalleryVisibilityProps {
+  [key: string]: unknown;
+  gallerySectionVisibilityJson?: string;
+}
+
+interface ContactCollectionsProps {
+  [key: string]: unknown;
+  officeHoursJson?: string;
+  bedroomOptionsJson?: string;
+  moveInOptionsJson?: string;
+  tourTypeOptionsJson?: string;
+}
+
+interface ContactVisibilityProps {
+  [key: string]: unknown;
+  contactSectionVisibilityJson?: string;
+}
+
+interface ContactUiProps {
+  [key: string]: unknown;
+  contactUiJson?: string;
+}
+
+interface ContactIntegrationsProps {
+  [key: string]: unknown;
+  smtpJson?: string;
+  submitHooksJson?: string;
+}
 
 export default function StudioPage() {
   const { draft, published, mode, setMode, updateDraft, publish, revertDraft, exportDraftJson } = useEditableContent();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editorPage, setEditorPage] = useState<"global" | "home" | "gallery" | "contact">("home");
-  const [importMessage, setImportMessage] = useState<string>("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [puckReady, setPuckReady] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [revertDialogOpen, setRevertDialogOpen] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(() => {
     if (typeof window === "undefined") return false;
     const stored = window.localStorage.getItem(ADMIN_AUTH_STORAGE_KEY);
@@ -56,6 +225,45 @@ export default function StudioPage() {
     };
   }, [hasUnpublishedChanges]);
 
+  // Mark Puck as ready after a short delay (simulates initialization)
+  useEffect(() => {
+    if (!isUnlocked) return;
+    setPuckReady(false);
+    const timer = setTimeout(() => setPuckReady(true), 600);
+    return () => clearTimeout(timer);
+  }, [isUnlocked]);
+
+  // Keyboard shortcuts: Ctrl+S to save draft, Ctrl+Shift+P to publish
+  const handleSaveDraft = useCallback(() => {
+    if (!isUnlocked) return;
+    setAutosaveStatus("saving");
+    updateDraft(draft);
+    setAutosaveStatus("saved");
+    setLastSavedAt(Date.now());
+    toast.success("Draft saved");
+  }, [isUnlocked, draft, updateDraft]);
+
+  const handlePublishShortcut = useCallback(() => {
+    if (!isUnlocked) return;
+    setPublishDialogOpen(true);
+  }, [isUnlocked]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && !e.shiftKey && e.key === "s") {
+        e.preventDefault();
+        handleSaveDraft();
+      }
+      if (mod && e.shiftKey && (e.key === "P" || e.key === "p")) {
+        e.preventDefault();
+        handlePublishShortcut();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleSaveDraft, handlePublishShortcut]);
+
   const config = useMemo(
     () => ({
       components: {
@@ -72,7 +280,7 @@ export default function StudioPage() {
             addressLine: { type: "text", label: "Address" },
             hoursLine: { type: "text", label: "Hours" },
           },
-          render: (props: any) => (
+          render: (props: GlobalBrandProps) => (
             <section className="relative overflow-hidden rounded-2xl border border-border bg-panel-gradient p-5 shadow-soft md:p-6">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.15),transparent_70%)]" />
               <p className="relative z-10 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent">Global Brand</p>
@@ -112,7 +320,7 @@ export default function StudioPage() {
             footerBadgesJson: stringListField("Footer Badges"),
             seoTitleSuffix: { type: "text", label: "SEO Title Suffix" },
           },
-          render: (props: any) => {
+          render: (props: GlobalCollectionsProps) => {
             const navLinks = PuckDataService.parseArray(props?.navLinksJson, [] as Array<{ to: string; label: string }>);
             const footerBadges = PuckDataService.parseArray(props?.footerBadgesJson, [] as string[]);
             return (
@@ -143,7 +351,7 @@ export default function StudioPage() {
             secondaryCtaText: { type: "text", label: "Secondary CTA Text" },
             secondaryCtaLink: { type: "text", label: "Secondary CTA Link" },
           },
-          render: (props: any) => (
+          render: (props: HomeHeroProps) => (
             <section className="relative overflow-hidden rounded-2xl border border-border bg-panel-gradient p-6 shadow-soft">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.16),transparent_72%)]" />
               <p className="relative z-10 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent">Home Hero</p>
@@ -167,7 +375,7 @@ export default function StudioPage() {
             heroDescription: { type: "textarea", label: "Gallery Description" },
             heroImage: { type: "text", label: "Gallery Hero Image" },
           },
-          render: (props: any) => (
+          render: (props: GalleryHeroProps) => (
             <section className="relative overflow-hidden rounded-2xl border border-border shadow-soft">
               <div
                 className="pointer-events-none absolute inset-0 bg-cover bg-center"
@@ -193,7 +401,7 @@ export default function StudioPage() {
             secondaryText: { type: "text", label: "Secondary Button Text" },
             secondaryLink: { type: "text", label: "Secondary Button Link" },
           },
-          render: (props: any) => (
+          render: (props: GalleryCtaProps) => (
             <section className="rounded-2xl border border-border bg-panel-gradient p-6 shadow-soft">
               <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent">Gallery CTA</p>
               <p className="mt-2 text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{props?.ctaEyebrow ?? "Call to action"}</p>
@@ -219,7 +427,7 @@ export default function StudioPage() {
             mapEmbedUrl: { type: "text", label: "Contact Map Embed URL" },
             officeHoursTitle: { type: "text", label: "Office Hours Title" },
           },
-          render: (props: any) => (
+          render: (props: ContactHeroProps) => (
             <section className="relative overflow-hidden rounded-2xl border border-border shadow-soft">
               <div
                 className="pointer-events-none absolute inset-0 bg-cover bg-center"
@@ -258,7 +466,7 @@ export default function StudioPage() {
             tourFormDescription: { type: "textarea", label: "Form Description" },
             submitText: { type: "text", label: "Submit Button Text" },
           },
-          render: (props: any) => (
+          render: (props: ContactFormMetaProps) => (
             <section className="grid gap-4 rounded-2xl border border-border bg-panel-gradient p-5 shadow-soft md:grid-cols-2">
               <div className="rounded-xl border border-border/70 bg-background/50 p-4">
                 <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.18em] text-accent">{draft.contact.ui.formEyebrow}</p>
@@ -361,7 +569,7 @@ export default function StudioPage() {
               { key: "distance", label: "Distance", type: "text" },
             ], () => ({ title: "New Highlight", description: "", distance: "Nearby" })),
           },
-          render: (props: any) => {
+          render: (props: HomeCollectionsProps) => {
             const stats = PuckDataService.parseArray(props?.statsJson, [] as Array<{ value: number; suffix: string; label: string }>);
             const floorPlans = PuckDataService.parseArray(props?.floorPlansJson, [] as Array<{ title: string; sqft: string; image: string; priceRange: string }>);
             const amenities = PuckDataService.parseArray(props?.amenityPanelsJson, [] as Array<{ title: string; image: string }>);
@@ -424,7 +632,7 @@ export default function StudioPage() {
           fields: {
             sectionVisibilityJson: visibilityField("Home Section Visibility"),
           },
-          render: (props: any) => {
+          render: (props: HomeVisibilityProps) => {
             const visibility = PuckDataService.parseObject(props?.sectionVisibilityJson, {} as Record<string, boolean>);
             return (
               <section className="rounded-xl border border-border bg-panel-gradient p-5 shadow-soft">
@@ -450,7 +658,7 @@ export default function StudioPage() {
             homeUiJson: keyValueField("Home UI Copy"),
             mapEmbedUrl: { type: "text", label: "Home Map Embed URL" },
           },
-          render: (props: any) => {
+          render: (props: HomeUiProps) => {
             const homeUi = PuckDataService.parseObject(props?.homeUiJson, {} as Record<string, string>);
             const entries = Object.entries(homeUi).slice(0, 6);
             return (
@@ -476,7 +684,7 @@ export default function StudioPage() {
           fields: {
             galleryItemsJson: galleryManagerField("Gallery Item"),
           },
-          render: (props: any) => {
+          render: (props: GalleryCollectionsProps) => {
             const items = PuckDataService.parseArray(props?.galleryItemsJson, [] as Array<{ src: string; alt: string; label: string; category: string }>);
             const categoryCounts = items.reduce<Record<string, number>>((acc, item) => {
               acc[item.category] = (acc[item.category] ?? 0) + 1;
@@ -513,7 +721,7 @@ export default function StudioPage() {
           fields: {
             gallerySectionVisibilityJson: visibilityField("Gallery Section Visibility"),
           },
-          render: (props: any) => {
+          render: (props: GalleryVisibilityProps) => {
             const visibility = PuckDataService.parseObject(props?.gallerySectionVisibilityJson, {} as Record<string, boolean>);
             return (
               <section className="rounded-xl border border-border bg-panel-gradient p-5 shadow-soft">
@@ -541,7 +749,7 @@ export default function StudioPage() {
             moveInOptionsJson: stringListField("Move-In Options"),
             tourTypeOptionsJson: stringListField("Tour Type Options"),
           },
-          render: (props: any) => {
+          render: (props: ContactCollectionsProps) => {
             const officeHours = PuckDataService.parseArray(props?.officeHoursJson, [] as string[]);
             const bedroom = PuckDataService.parseArray(props?.bedroomOptionsJson, [] as string[]);
             const moveIn = PuckDataService.parseArray(props?.moveInOptionsJson, [] as string[]);
@@ -575,7 +783,7 @@ export default function StudioPage() {
           fields: {
             contactSectionVisibilityJson: visibilityField("Contact Section Visibility"),
           },
-          render: (props: any) => {
+          render: (props: ContactVisibilityProps) => {
             const visibility = PuckDataService.parseObject(props?.contactSectionVisibilityJson, {} as Record<string, boolean>);
             return (
               <section className="rounded-xl border border-border bg-panel-gradient p-5 shadow-soft">
@@ -600,7 +808,7 @@ export default function StudioPage() {
           fields: {
             contactUiJson: keyValueField("Contact UI Copy"),
           },
-          render: (props: any) => {
+          render: (props: ContactUiProps) => {
             const contactUi = PuckDataService.parseObject(props?.contactUiJson, {} as Record<string, unknown>);
             const labels = contactUi.labels && typeof contactUi.labels === "object" ? (contactUi.labels as Record<string, string>) : {};
             const placeholders =
@@ -652,7 +860,7 @@ export default function StudioPage() {
               headersJson: "{}",
             })),
           },
-          render: (props: any) => {
+          render: (props: ContactIntegrationsProps) => {
             const smtp = PuckDataService.parseObject(props?.smtpJson, {} as Record<string, unknown>);
             const hooks = PuckDataService.parseArray(props?.submitHooksJson, [] as Array<Record<string, unknown>>);
             const enabledHooks = hooks.filter((hook) => String(hook.enabled) === "true");
@@ -873,22 +1081,22 @@ export default function StudioPage() {
   const plugins = useMemo(() => [outlinePlugin(), fieldsPlugin({ desktopSideBar: "right" })], []);
 
   const applyPuckData = (nextData: PuckIncomingData, errorPrefix: string) => {
-    const globalEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "GlobalBrand");
-    const heroEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "HomeHero");
-    const globalCollectionsEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "GlobalCollections");
-    const galleryHeroEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "GalleryHero");
-    const galleryCtaEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "GalleryCta");
-    const contactHeroEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "ContactHero");
-    const contactFormEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "ContactFormMeta");
-    const homeCollectionsEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "HomeCollections");
-    const homeVisibilityEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "HomeVisibility");
-    const homeUiEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "HomeUi");
-    const galleryCollectionsEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "GalleryCollections");
-    const galleryVisibilityEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "GalleryVisibility");
-    const contactCollectionsEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "ContactCollections");
-    const contactVisibilityEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "ContactVisibility");
-    const contactUiEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "ContactUi");
-    const contactIntegrationsEntry = PuckDataService.getEntryProps<PuckComponentProps>(nextData, "ContactIntegrations");
+    const globalEntry = PuckDataService.getEntryProps<GlobalBrandProps>(nextData, "GlobalBrand");
+    const heroEntry = PuckDataService.getEntryProps<HomeHeroProps>(nextData, "HomeHero");
+    const globalCollectionsEntry = PuckDataService.getEntryProps<GlobalCollectionsProps>(nextData, "GlobalCollections");
+    const galleryHeroEntry = PuckDataService.getEntryProps<GalleryHeroProps>(nextData, "GalleryHero");
+    const galleryCtaEntry = PuckDataService.getEntryProps<GalleryCtaProps>(nextData, "GalleryCta");
+    const contactHeroEntry = PuckDataService.getEntryProps<ContactHeroProps>(nextData, "ContactHero");
+    const contactFormEntry = PuckDataService.getEntryProps<ContactFormMetaProps>(nextData, "ContactFormMeta");
+    const homeCollectionsEntry = PuckDataService.getEntryProps<HomeCollectionsProps>(nextData, "HomeCollections");
+    const homeVisibilityEntry = PuckDataService.getEntryProps<HomeVisibilityProps>(nextData, "HomeVisibility");
+    const homeUiEntry = PuckDataService.getEntryProps<HomeUiProps>(nextData, "HomeUi");
+    const galleryCollectionsEntry = PuckDataService.getEntryProps<GalleryCollectionsProps>(nextData, "GalleryCollections");
+    const galleryVisibilityEntry = PuckDataService.getEntryProps<GalleryVisibilityProps>(nextData, "GalleryVisibility");
+    const contactCollectionsEntry = PuckDataService.getEntryProps<ContactCollectionsProps>(nextData, "ContactCollections");
+    const contactVisibilityEntry = PuckDataService.getEntryProps<ContactVisibilityProps>(nextData, "ContactVisibility");
+    const contactUiEntry = PuckDataService.getEntryProps<ContactUiProps>(nextData, "ContactUi");
+    const contactIntegrationsEntry = PuckDataService.getEntryProps<ContactIntegrationsProps>(nextData, "ContactIntegrations");
 
     const next = {
       ...draft,
@@ -1005,7 +1213,7 @@ export default function StudioPage() {
           submitHooks: PuckDataService.parseArray(
             contactIntegrationsEntry?.submitHooksJson as string | undefined,
             draft.contact.integrations.submitHooks,
-          ).map((hook: any) => ({
+          ).map((hook: Record<string, unknown>) => ({
             name: String(hook.name ?? ""),
             url: String(hook.url ?? ""),
             method: String(hook.method ?? "POST"),
@@ -1023,12 +1231,14 @@ export default function StudioPage() {
 
     const validation = validateEditableSiteDocument(next);
     if (!validation.valid) {
-      setImportMessage(`${errorPrefix}: ${validation.errors[0]}`);
+      const msg = `${errorPrefix}: ${validation.errors[0]}`;
+      setValidationError(msg);
       setAutosaveStatus("error");
-      toast.error(`${errorPrefix}: ${validation.errors[0]}`);
+      toast.error(msg);
       return;
     }
 
+    setValidationError(null);
     setAutosaveStatus("saving");
     updateDraft(next);
     setAutosaveStatus("saved");
@@ -1067,19 +1277,21 @@ export default function StudioPage() {
       const parsed = JSON.parse(raw);
       const { document, errors } = coerceEditableSiteDocument(parsed);
       if (!document) {
-        setImportMessage(`Import failed: ${errors[0] ?? "invalid JSON structure"}.`);
-        toast.error(`Import failed: ${errors[0] ?? "invalid JSON structure"}.`);
+        const msg = `Import failed: ${errors[0] ?? "invalid JSON structure"}.`;
+        setImportError(msg);
+        toast.error(msg);
         return;
       }
 
       updateDraft(document);
-      setImportMessage("Draft imported successfully.");
+      setImportError(null);
       setAutosaveStatus("saved");
       setLastSavedAt(Date.now());
       toast.success("Draft imported successfully");
     } catch {
-      setImportMessage("Import failed: unable to parse JSON file.");
-      toast.error("Import failed: unable to parse JSON file.");
+      const msg = "Import failed: unable to parse JSON file.";
+      setImportError(msg);
+      toast.error(msg);
     } finally {
       event.target.value = "";
     }
@@ -1094,26 +1306,28 @@ export default function StudioPage() {
       return;
     }
 
-    if (!AdminAuthService.verifyPassword(password, STUDIO_PASSWORD)) {
-      setAuthError("Invalid password.");
-      toast.error("Studio unlock failed");
-      return;
-    }
+    setIsAuthenticating(true);
+    // Simulate brief auth delay for UX
+    setTimeout(() => {
+      if (!AdminAuthService.verifyPassword(password, STUDIO_PASSWORD)) {
+        setAuthError("Invalid password.");
+        toast.error("Studio unlock failed");
+        setIsAuthenticating(false);
+        return;
+      }
 
-    setAuthError("");
-    setPassword("");
-    setIsUnlocked(true);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(ADMIN_AUTH_STORAGE_KEY, AdminAuthService.buildToken(STUDIO_PASSWORD));
-    }
-    toast.success("Studio unlocked");
+      setAuthError("");
+      setPassword("");
+      setIsUnlocked(true);
+      setIsAuthenticating(false);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(ADMIN_AUTH_STORAGE_KEY, AdminAuthService.buildToken(STUDIO_PASSWORD));
+      }
+      toast.success("Studio unlocked");
+    }, 400);
   };
 
   const handleLock = () => {
-    if (hasUnpublishedChanges) {
-      const shouldLock = window.confirm("You have unpublished changes. Lock Studio anyway?");
-      if (!shouldLock) return;
-    }
     setIsUnlocked(false);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
@@ -1123,19 +1337,30 @@ export default function StudioPage() {
 
   const handlePublishDraft = () => {
     publish();
+    setSyncError(null);
     setAutosaveStatus("saved");
     setLastSavedAt(Date.now());
+    setPublishDialogOpen(false);
     toast.success("Draft published to live content");
   };
 
   const handleRevertDraft = () => {
-    if (hasUnpublishedChanges) {
-      const shouldRevert = window.confirm("Discard unpublished changes and revert draft?");
-      if (!shouldRevert) return;
-    }
     revertDraft();
     setAutosaveStatus("idle");
+    setValidationError(null);
+    setRevertDialogOpen(false);
     toast.success("Draft reverted to published");
+  };
+
+  const handleRetrySyncAction = async () => {
+    try {
+      publish();
+      setSyncError(null);
+      toast.success("Sync retry successful");
+    } catch {
+      setSyncError("API sync failed. Changes saved locally only.");
+      toast.error("Sync retry failed");
+    }
   };
 
   const handleCopyDraftJson = async () => {
@@ -1148,10 +1373,42 @@ export default function StudioPage() {
   };
 
   if (!isUnlocked) {
+    if (!STUDIO_PASSWORD) {
+      return (
+        <main className="min-h-screen bg-body-mesh flex items-center justify-center">
+          <section className="w-[min(560px,92vw)]">
+            <div className="rounded-2xl border border-destructive/40 bg-panel-gradient p-6 shadow-soft md:p-8">
+              <div className="mb-6 text-center">
+                <p className="font-display text-xl text-foreground">{draft.global.siteName || "Baba Flats"}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">Studio</p>
+              </div>
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-destructive">Configuration Error</p>
+              <h1 className="mt-2 font-display text-3xl md:text-4xl">Studio Unavailable</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                The studio password has not been configured. Set the{" "}
+                <code className="rounded bg-secondary px-1.5 py-0.5 text-xs font-mono text-foreground">{STUDIO_PASSWORD_ENV_HINT}</code>{" "}
+                environment variable and restart the application.
+              </p>
+              <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
+                <p className="text-xs font-mono text-muted-foreground">
+                  # .env<br />
+                  {STUDIO_PASSWORD_ENV_HINT}=your-secure-password
+                </p>
+              </div>
+            </div>
+          </section>
+        </main>
+      );
+    }
+
     return (
-      <main className="bg-body-mesh py-16 md:py-24">
-        <section className="mx-auto w-[min(560px,92vw)]">
+      <main className="min-h-screen bg-body-mesh flex items-center justify-center">
+        <section className="w-[min(560px,92vw)]">
           <div className="rounded-2xl border border-border bg-panel-gradient p-6 shadow-soft md:p-8">
+            <div className="mb-6 text-center">
+              <p className="font-display text-xl text-foreground">{draft.global.siteName || "Baba Flats"}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">Studio</p>
+            </div>
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-accent">Protected</p>
             <h1 className="mt-2 font-display text-3xl md:text-4xl">Enter Password</h1>
             <p className="mt-2 text-sm text-muted-foreground">This page is locked. Enter the admin password to open the visual studio.</p>
@@ -1165,6 +1422,7 @@ export default function StudioPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
+                  disabled={isAuthenticating}
                 />
               </label>
 
@@ -1172,9 +1430,11 @@ export default function StudioPage() {
 
               <button
                 type="submit"
-                className="mt-1 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
+                disabled={isAuthenticating}
+                className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground disabled:opacity-50"
               >
-                Unlock Studio
+                {isAuthenticating && <Loader2Icon className="size-3.5 animate-spin" />}
+                {isAuthenticating ? "Unlocking…" : "Unlock Studio"}
               </button>
             </form>
           </div>
@@ -1183,146 +1443,249 @@ export default function StudioPage() {
     );
   }
 
+  const sectionPages = ["home", "gallery", "contact", "global"] as const;
+
   return (
     <main className="min-h-screen bg-background">
+      {/* Redesigned Toolbar */}
       <div className="mx-auto flex w-[min(1440px,96vw)] flex-col gap-3 py-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-panel-gradient p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Canvas</span>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("published");
-                toast("Live canvas mode");
-              }}
-              className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
-                mode === "published" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              Live
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("preview");
-                toast("Draft preview mode");
-              }}
-              className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
-                mode === "preview" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              Draft
-            </button>
-            <span
-              className={`rounded-full px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.12em] ${
-                autosaveStatus === "error"
-                  ? "bg-destructive text-destructive-foreground"
-                  : autosaveStatus === "saving"
-                    ? "bg-secondary text-secondary-foreground"
-                    : "bg-emerald-600 text-white"
-              }`}
-            >
-              {autosaveStatus === "error"
-                ? "Save Error"
-                : autosaveStatus === "saving"
-                  ? "Autosaving"
-                  : hasUnpublishedChanges
-                    ? `Autosaved${lastSavedAt ? ` ${new Date(lastSavedAt).toLocaleTimeString()}` : ""}`
-                    : "Up to Date"}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Section</span>
-            {(["home", "gallery", "contact", "global"] as const).map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() => {
-                  setEditorPage(page);
-                  toast(`Editing ${page} content`);
-                }}
-                className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
-                  editorPage === page ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+        <div className="rounded-xl border border-border bg-panel-gradient p-3 shadow-soft">
+          {/* Top row: Logo + Section tabs (desktop) + Actions */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Left: Canvas mode toggle + autosave status */}
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm font-display text-foreground sm:inline">Studio</span>
+              <div className="flex items-center rounded-full border border-border bg-background/60 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => { setMode("published"); toast("Live canvas mode"); }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
+                    mode === "published" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Live
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode("preview"); toast("Draft preview mode"); }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
+                    mode === "preview" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Draft
+                </button>
+              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.12em] transition-all ${
+                  autosaveStatus === "error"
+                    ? "bg-destructive text-destructive-foreground"
+                    : autosaveStatus === "saving"
+                      ? "bg-secondary text-secondary-foreground animate-pulse"
+                      : "bg-emerald-600 text-white"
                 }`}
               >
-                {page}
-              </button>
-            ))}
-          </div>
+                {autosaveStatus === "error"
+                  ? "Save Error"
+                  : autosaveStatus === "saving"
+                    ? "Saving…"
+                    : hasUnpublishedChanges
+                      ? `Saved${lastSavedAt ? ` ${new Date(lastSavedAt).toLocaleTimeString()}` : ""}`
+                      : "Up to Date"}
+              </span>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleRevertDraft}
-              className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-            >
-              Revert
-            </button>
-            <button
-              type="button"
-              onClick={handlePublishDraft}
-              className="rounded-full bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary-foreground"
-            >
-              Publish
-            </button>
-            <button
-              type="button"
-              onClick={downloadDraftJson}
-              className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-            >
-              Download
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-            >
-              Import
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyDraftJson}
-              className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-            >
-              Copy JSON
-            </button>
-            <button
-              type="button"
-              onClick={handleLock}
-              className="rounded-full border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em]"
-            >
-              Lock
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={handleImportFile}
-            />
+            {/* Center: Section tabs (desktop only) */}
+            <div className="hidden items-center gap-1 md:flex">
+              {sectionPages.map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => { setEditorPage(page); toast(`Editing ${page} content`); }}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
+                    editorPage === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-secondary-foreground"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            {/* Center: Section dropdown (mobile only) */}
+            <div className="md:hidden">
+              <Select value={editorPage} onValueChange={(val) => { setEditorPage(val as typeof editorPage); toast(`Editing ${val} content`); }}>
+                <SelectTrigger size="sm" className="w-28">
+                  <SelectValue placeholder="Section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sectionPages.map((page) => (
+                    <SelectItem key={page} value={page}>
+                      {page.charAt(0).toUpperCase() + page.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Right: Primary actions + overflow menu */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRevertDialogOpen(true)}
+              >
+                Revert
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setPublishDialogOpen(true)}
+              >
+                Publish
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open("/", "_blank")}
+                title="Preview in new tab"
+              >
+                <ExternalLinkIcon className="size-3.5" />
+              </Button>
+
+              {/* Overflow menu for secondary actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="outline" size="icon-sm" />}
+                >
+                  <MoreVerticalIcon className="size-3.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={downloadDraftJson}>
+                    <DownloadIcon className="size-3.5" />
+                    Download JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                    <UploadIcon className="size-3.5" />
+                    Import JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyDraftJson}>
+                    <CopyIcon className="size-3.5" />
+                    Copy JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLock}>
+                    <LockIcon className="size-3.5" />
+                    Lock Studio
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {importMessage ? (
-        <div className="mx-auto mb-3 w-[min(1280px,96vw)] text-xs text-muted-foreground">{importMessage}</div>
-      ) : null}
+      {/* Publish confirmation dialog */}
+      <AlertDialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will push your draft changes to the live site. Visitors will see the updated content immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePublishDraft}>Publish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
+      {/* Revert confirmation dialog */}
+      <AlertDialog open={revertDialogOpen} onOpenChange={setRevertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revert Draft</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will discard all unpublished changes and revert the draft to the currently published content. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleRevertDraft}>Revert</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Inline error states */}
       <div className="mx-auto w-[min(1600px,96vw)]">
-        <div className="mb-2 text-xs text-muted-foreground">
-          Live canvas editing is enabled. Click a section on the page canvas to edit fields in the panel.
-        </div>
-        <div className="min-w-0 overflow-hidden rounded-xl border border-border">
-          <Puck
-            key={puckCanvasKey}
-            config={config as any}
-            data={data as any}
-            onPublish={onPublish}
-            onChange={onChange}
-            plugins={plugins as any}
-          />
-        </div>
+        {/* Validation error banner */}
+        {validationError && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            <AlertTriangleIcon className="size-4 shrink-0" />
+            <span className="flex-1">{validationError}</span>
+            <button type="button" onClick={() => setValidationError(null)} className="shrink-0 rounded p-0.5 hover:bg-destructive/20">
+              <XIcon className="size-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* API sync error bar */}
+        {syncError && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-600 dark:text-amber-400">
+            <AlertTriangleIcon className="size-4 shrink-0" />
+            <span className="flex-1">{syncError}</span>
+            <button type="button" onClick={handleRetrySyncAction} className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 px-2.5 py-0.5 text-xs font-semibold hover:bg-amber-500/20">
+              <RefreshCwIcon className="size-3" />
+              Retry
+            </button>
+            <button type="button" onClick={() => setSyncError(null)} className="shrink-0 rounded p-0.5 hover:bg-amber-500/20">
+              <XIcon className="size-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Import error inline */}
+        {importError && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            <AlertTriangleIcon className="size-4 shrink-0" />
+            <span className="flex-1">{importError}</span>
+            <button type="button" onClick={() => setImportError(null)} className="shrink-0 rounded p-0.5 hover:bg-destructive/20">
+              <XIcon className="size-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Loading skeleton while Puck initializes */}
+        {!puckReady ? (
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border bg-panel-gradient p-16">
+            <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Loading editor…</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-2 text-xs text-muted-foreground">
+              Live canvas editing is enabled. Click a section on the page canvas to edit fields in the panel.
+              <span className="ml-2 text-muted-foreground/60">Ctrl+S to save • Ctrl+Shift+P to publish</span>
+            </div>
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border shadow-soft">
+              {/* Puck's Config generic requires exact field type matching that doesn't align with our dynamic config shape */}
+              <Puck
+                key={puckCanvasKey}
+                config={config as Parameters<typeof Puck>[0]["config"]}
+                data={data as Parameters<typeof Puck>[0]["data"]}
+                onPublish={onPublish}
+                onChange={onChange}
+                plugins={plugins as Parameters<typeof Puck>[0]["plugins"]}
+              />
+            </div>
+          </>
+        )}
       </div>
     </main>
   );

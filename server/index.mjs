@@ -1,9 +1,10 @@
 import express from "express";
 import nodemailer from "nodemailer";
 import multer from "multer";
+import rateLimit from "express-rate-limit";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { env } from "./env.mjs";
+import { env, validateRequiredEnv } from "./env.mjs";
 import {
   bootstrapContent,
   getDraftDocument,
@@ -12,7 +13,17 @@ import {
   setDraftDocument,
 } from "./content-store.mjs";
 
+validateRequiredEnv();
+
 const app = express();
+
+// --- Task 7.1: Security headers on all responses ---
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
 const PORT = env.apiPort;
 const STUDIO_PASSWORD = env.studioPassword;
 const uploadDir = path.resolve(process.cwd(), "public/uploads");
@@ -25,8 +36,10 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname || "").toLowerCase();
-    const baseName = (path.basename(file.originalname || "upload", ext) || "upload")
+    let baseName = (path.basename(file.originalname || "upload", ext) || "upload")
       .toLowerCase()
+      .replace(/\.\./g, "")        // strip path traversal sequences
+      .replace(/[/\\]/g, "-")      // replace slashes with dashes
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 60);
@@ -94,6 +107,7 @@ function getSmtpTransport() {
   return cachedTransport;
 }
 
+/** @param {import('express').Request} req @param {import('express').Response} res @param {import('express').NextFunction} next */
 function requireStudioAuth(req, res, next) {
   const provided = req.header("x-studio-password") ?? "";
   if (!provided || provided !== STUDIO_PASSWORD) {
@@ -108,23 +122,31 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.get("/api/content/draft", requireStudioAuth, async (_req, res) => {
-  const draft = await getDraftDocument();
-  if (!draft) {
-    res.status(404).json({ ok: false, message: "Draft not initialized" });
-    return;
-  }
+  try {
+    const draft = await getDraftDocument();
+    if (!draft) {
+      res.status(404).json({ ok: false, message: "Draft not initialized" });
+      return;
+    }
 
-  res.json({ ok: true, data: draft });
+    res.json({ ok: true, data: draft });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "Failed to read draft" });
+  }
 });
 
 app.get("/api/content/published", requireStudioAuth, async (_req, res) => {
-  const published = await getPublishedDocument();
-  if (!published) {
-    res.status(404).json({ ok: false, message: "Published document not initialized" });
-    return;
-  }
+  try {
+    const published = await getPublishedDocument();
+    if (!published) {
+      res.status(404).json({ ok: false, message: "Published document not initialized" });
+      return;
+    }
 
-  res.json({ ok: true, data: published });
+    res.json({ ok: true, data: published });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "Failed to read published document" });
+  }
 });
 
 app.post("/api/content/bootstrap", requireStudioAuth, async (req, res) => {
@@ -134,8 +156,12 @@ app.post("/api/content/bootstrap", requireStudioAuth, async (req, res) => {
     return;
   }
 
-  const result = await bootstrapContent(document);
-  res.json({ ok: true, data: result });
+  try {
+    const result = await bootstrapContent(document);
+    res.json({ ok: true, data: result });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "Failed to bootstrap content" });
+  }
 });
 
 app.put("/api/content/draft", requireStudioAuth, async (req, res) => {
@@ -145,8 +171,12 @@ app.put("/api/content/draft", requireStudioAuth, async (req, res) => {
     return;
   }
 
-  const updated = await setDraftDocument(document);
-  res.json({ ok: true, data: updated });
+  try {
+    const updated = await setDraftDocument(document);
+    res.json({ ok: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: error instanceof Error ? error.message : "Failed to save draft" });
+  }
 });
 
 app.post("/api/content/publish", requireStudioAuth, async (_req, res) => {
@@ -154,7 +184,8 @@ app.post("/api/content/publish", requireStudioAuth, async (_req, res) => {
     const published = await publishDraftDocument();
     res.json({ ok: true, data: published });
   } catch (error) {
-    res.status(400).json({ ok: false, message: error instanceof Error ? error.message : "Publish failed" });
+    const status = error instanceof Error && error.message.includes("not found") ? 400 : 500;
+    res.status(status).json({ ok: false, message: error instanceof Error ? error.message : "Publish failed" });
   }
 });
 
@@ -163,6 +194,11 @@ app.post("/api/assets/upload", requireStudioAuth, async (req, res) => {
 
   upload.array("files")(req, res, (error) => {
     if (error) {
+      // Task 7.3: Explicit 413 for oversized uploads
+      if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+        res.status(413).json({ ok: false, message: "File too large" });
+        return;
+      }
       res.status(400).json({ ok: false, message: error instanceof Error ? error.message : "Upload failed" });
       return;
     }
@@ -180,7 +216,16 @@ app.post("/api/assets/upload", requireStudioAuth, async (req, res) => {
   });
 });
 
-app.post("/api/contact/submit", async (req, res) => {
+// --- Task 7.2: Rate limit on contact submit ---
+const contactLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: "Too many requests, please try again later" },
+});
+
+app.post("/api/contact/submit", contactLimiter, async (req, res) => {
   const { form, submittedAt, page, siteName, integrations } = req.body ?? {};
 
   if (!form || typeof form !== "object") {
@@ -314,6 +359,26 @@ app.post("/api/contact/submit", async (req, res) => {
     message: totalFailures === 0 ? "Submission delivered" : "Submission saved with partial delivery failures",
     smtp: smtpResult,
     hooks: hookResults,
+  });
+});
+
+// --- Task 5.4: JSON parse error middleware ---
+/** @param {Error & {type?: string}} err @param {import('express').Request} _req @param {import('express').Response} res @param {import('express').NextFunction} next */
+app.use((err, _req, res, next) => {
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({ ok: false, message: "Malformed JSON in request body" });
+  }
+  next(err);
+});
+
+// --- Task 18.3: Production error handler ---
+const isProduction = process.env.NODE_ENV === "production";
+/** @param {Error} err @param {import('express').Request} _req @param {import('express').Response} res @param {import('express').NextFunction} _next */
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({
+    ok: false,
+    message: isProduction ? "Internal server error" : (err instanceof Error ? err.message : String(err)),
   });
 });
 

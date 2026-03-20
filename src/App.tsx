@@ -1,14 +1,15 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import SitePreloader from "./components/SitePreloader";
-import SiteFooter from "./components/SiteFooter";
-import SiteHeader from "./components/SiteHeader";
+import SitePreloader from "./components/layout/SitePreloader";
+import SiteFooter from "./components/layout/SiteFooter";
+import SiteHeader from "./components/layout/SiteHeader";
+import RouteErrorBoundary from "./components/layout/RouteErrorBoundary";
 import { EditableContentProvider } from "./context/EditableContentContext";
 const HomePage = lazy(() => import("./pages/HomePage"));
 const GalleryPage = lazy(() => import("./pages/GalleryPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
-
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const StudioPage = lazy(() => import("./pages/StudioPage"));
 
 function RouteFallback() {
@@ -37,7 +38,7 @@ function AppContent({ showPreloader }: { showPreloader: boolean }) {
         <Route path="/edit/gallery" element={<Navigate to="/studio" replace />} />
         <Route path="/edit/contact" element={<Navigate to="/studio" replace />} />
         <Route path="/admin/config" element={<Navigate to="/studio" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<RouteErrorBoundary><Suspense fallback={<RouteFallback />}><NotFoundPage /></Suspense></RouteErrorBoundary>} />
       </Routes>
 
       {!isStudio ? <SiteFooter /> : null}

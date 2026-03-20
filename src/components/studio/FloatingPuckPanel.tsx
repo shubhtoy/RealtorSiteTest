@@ -21,6 +21,12 @@ type PuckPanelData = {
 };
 
 // Mock Puck config for different component types
+
+interface FloatingHeaderProps { siteName?: string; cityLabel?: string; tagline?: string; navCtaText?: string; navCtaLink?: string; [key: string]: unknown; }
+interface FloatingFooterProps { siteName?: string; description?: string; phone?: string; email?: string; addressLine?: string; hoursLine?: string; [key: string]: unknown; }
+interface FloatingHeroProps { title?: string; subtitle?: string; ctaText?: string; ctaLink?: string; [key: string]: unknown; }
+interface FloatingFeaturesProps { sectionTitle?: string; [key: string]: unknown; }
+
 const PUCK_CONFIG = {
   components: {
     SiteHeader: {
@@ -31,7 +37,7 @@ const PUCK_CONFIG = {
         navCtaText: { type: "text", label: "Nav CTA Text" },
         navCtaLink: { type: "text", label: "Nav CTA Link" },
       },
-      render: ({ siteName = "Site Name", cityLabel = "City", tagline = "Tagline" }: any) => (
+      render: ({ siteName = "Site Name", cityLabel = "City", tagline = "Tagline" }: FloatingHeaderProps) => (
         <div className="p-4 border rounded bg-gray-50">
           <h3 className="font-bold">{siteName}</h3>
           <p className="text-sm text-gray-600">{cityLabel}</p>
@@ -48,7 +54,7 @@ const PUCK_CONFIG = {
         addressLine: { type: "text", label: "Address" },
         hoursLine: { type: "text", label: "Hours" },
       },
-      render: ({ siteName = "Site Name", description = "Description", phone = "Phone", email = "Email" }: any) => (
+      render: ({ siteName = "Site Name", description = "Description", phone = "Phone", email = "Email" }: FloatingFooterProps) => (
         <div className="p-4 border rounded bg-gray-50">
           <h3 className="font-bold">{siteName}</h3>
           <p className="text-sm text-gray-600">{description}</p>
@@ -63,7 +69,7 @@ const PUCK_CONFIG = {
         ctaText: { type: "text", label: "CTA Text" },
         ctaLink: { type: "text", label: "CTA Link" },
       },
-      render: ({ title = "Hero Title", subtitle = "Hero subtitle" }: any) => (
+      render: ({ title = "Hero Title", subtitle = "Hero subtitle" }: FloatingHeroProps) => (
         <div className="p-4 border rounded bg-blue-50">
           <h2 className="text-xl font-bold">{title}</h2>
           <p className="text-gray-600">{subtitle}</p>
@@ -76,7 +82,7 @@ const PUCK_CONFIG = {
         featuresJson: { 
           type: "custom", 
           label: "Features",
-          render: ({ value, onChange }: any) => (
+          render: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
             <div className="space-y-2">
               <textarea 
                 className="w-full p-2 border rounded text-sm"
@@ -89,7 +95,7 @@ const PUCK_CONFIG = {
           )
         },
       },
-      render: ({ sectionTitle = "Features" }: any) => (
+      render: ({ sectionTitle = "Features" }: FloatingFeaturesProps) => (
         <div className="p-4 border rounded bg-green-50">
           <h3 className="font-bold">{sectionTitle}</h3>
         </div>
@@ -275,10 +281,10 @@ export default function FloatingPuckPanel() {
         </button>
       </div>
 
-      {/* Puck editor */}
+      {/* Puck editor — cast needed: Puck's Config generic requires exact field type matching incompatible with our dynamic config shape */}
       <div className="p-4 max-h-[70vh] overflow-y-auto">
         <Puck
-          config={PUCK_CONFIG as any}
+          config={PUCK_CONFIG as Parameters<typeof Puck>[0]["config"]}
           data={puckData}
           onPublish={handlePuckPublish}
           onChange={handlePuckChange}

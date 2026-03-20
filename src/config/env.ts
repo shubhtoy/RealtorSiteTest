@@ -11,6 +11,6 @@ function toNumber(value: string | undefined, fallback: number): number {
 
 export const appEnv = {
   apiOrigin: clean(rawEnv.VITE_API_ORIGIN) || "http://localhost:8787",
-  studioPassword: clean(rawEnv.VITE_STUDIO_PASSWORD) || "shubh123",
+  studioPassword: clean(rawEnv.VITE_STUDIO_PASSWORD),
   apiTimeoutMs: toNumber(rawEnv.VITE_API_TIMEOUT_MS, 10000),
 } as const;

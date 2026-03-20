@@ -10,6 +10,7 @@ export class PuckDataService {
     if (!raw) return fallback;
 
     try {
+      // JSON.parse returns `any` — cast to `unknown` for safe narrowing
       const parsed = JSON.parse(raw) as unknown;
       return Array.isArray(parsed) ? (parsed as T[]) : fallback;
     } catch {
@@ -21,6 +22,7 @@ export class PuckDataService {
     if (!raw) return fallback;
 
     try {
+      // JSON.parse returns `any` — cast to `unknown` for safe narrowing
       const parsed = JSON.parse(raw) as unknown;
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         return fallback;

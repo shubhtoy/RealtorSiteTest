@@ -12,6 +12,51 @@ import { PuckDataService } from "@/lib/puck-data";
 const ADMIN_AUTH_STORAGE_KEY = "baba.admin.contact-studio.unlocked";
 type PuckIncomingData = { content?: unknown };
 
+interface ContactStudioHeroProps {
+  [key: string]: unknown;
+  heroEyebrow?: string;
+  heroTitle?: string;
+  heroDescription?: string;
+  heroImage?: string;
+  mapEmbedUrl?: string;
+}
+
+interface ContactStudioOfficeHoursProps {
+  [key: string]: unknown;
+  officeHoursTitle?: string;
+  officeHoursJson?: string;
+}
+
+interface ContactStudioFormContentProps {
+  [key: string]: unknown;
+  tourFormTitle?: string;
+  tourFormDescription?: string;
+  submitText?: string;
+  formEyebrow?: string;
+  infoBulletsJson?: string;
+  featureBadgesJson?: string;
+}
+
+interface ContactStudioFormOptionsProps {
+  [key: string]: unknown;
+  bedroomOptionsJson?: string;
+  moveInOptionsJson?: string;
+  tourTypeOptionsJson?: string;
+}
+
+interface ContactStudioLabelsProps {
+  [key: string]: unknown;
+  callButtonPrefix?: string;
+  browseButtonText?: string;
+  labelsJson?: string;
+  placeholdersJson?: string;
+}
+
+interface ContactStudioVisibilityProps {
+  [key: string]: unknown;
+  contactSectionVisibilityJson?: string;
+}
+
 type PuckPermissionState = {
   drag: boolean;
   duplicate: boolean;
@@ -71,7 +116,7 @@ export default function ContactStudioPage() {
             heroImage: { type: "text", label: "Hero Image" },
             mapEmbedUrl: { type: "text", label: "Map Embed URL" },
           },
-          render: (props: any) => (
+          render: (props: ContactStudioHeroProps) => (
             <section className="cursor-pointer rounded-2xl border border-border bg-panel-gradient p-5 shadow-soft transition hover:border-primary/35">
               <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent">Hero</p>
               <p className="mt-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{props?.heroEyebrow ?? "Contact & Leasing"}</p>
@@ -89,7 +134,7 @@ export default function ContactStudioPage() {
             officeHoursTitle: { type: "text", label: "Office Hours Title" },
             officeHoursJson: stringListField("Office Hours"),
           },
-          render: (props: any) => {
+          render: (props: ContactStudioOfficeHoursProps) => {
             const officeHours = PuckDataService.parseArray(props?.officeHoursJson, draft.contact.officeHours);
             return (
               <section className="cursor-pointer rounded-xl border border-border bg-panel-gradient p-5 shadow-soft transition hover:border-primary/35">
@@ -115,7 +160,7 @@ export default function ContactStudioPage() {
             infoBulletsJson: stringListField("Info Bullets"),
             featureBadgesJson: stringListField("Feature Badges"),
           },
-          render: (props: any) => {
+          render: (props: ContactStudioFormContentProps) => {
             const bullets = PuckDataService.parseArray(props?.infoBulletsJson, draft.contact.ui.infoBullets);
             const badges = PuckDataService.parseArray(props?.featureBadgesJson, draft.contact.ui.featureBadges);
             return (
@@ -145,7 +190,7 @@ export default function ContactStudioPage() {
             moveInOptionsJson: stringListField("Move-In Options"),
             tourTypeOptionsJson: stringListField("Tour Type Options"),
           },
-          render: (props: any) => {
+          render: (props: ContactStudioFormOptionsProps) => {
             const bedroom = PuckDataService.parseArray(props?.bedroomOptionsJson, draft.contact.formOptions.bedroom);
             const moveIn = PuckDataService.parseArray(props?.moveInOptionsJson, draft.contact.formOptions.moveIn);
             const tourType = PuckDataService.parseArray(props?.tourTypeOptionsJson, draft.contact.formOptions.tourType);
@@ -279,12 +324,12 @@ export default function ContactStudioPage() {
   );
 
   const applyPuckData = (nextData: PuckIncomingData, errorPrefix: string) => {
-    const heroEntry = PuckDataService.getEntryProps<Record<string, any>>(nextData, "ContactHero");
-    const officeHoursEntry = PuckDataService.getEntryProps<Record<string, any>>(nextData, "ContactOfficeHours");
-    const formContentEntry = PuckDataService.getEntryProps<Record<string, any>>(nextData, "ContactFormContent");
-    const formOptionsEntry = PuckDataService.getEntryProps<Record<string, any>>(nextData, "ContactFormOptions");
-    const labelsEntry = PuckDataService.getEntryProps<Record<string, any>>(nextData, "ContactUiLabels");
-    const visibilityEntry = PuckDataService.getEntryProps<Record<string, any>>(nextData, "ContactVisibility");
+    const heroEntry = PuckDataService.getEntryProps<ContactStudioHeroProps>(nextData, "ContactHero");
+    const officeHoursEntry = PuckDataService.getEntryProps<ContactStudioOfficeHoursProps>(nextData, "ContactOfficeHours");
+    const formContentEntry = PuckDataService.getEntryProps<ContactStudioFormContentProps>(nextData, "ContactFormContent");
+    const formOptionsEntry = PuckDataService.getEntryProps<ContactStudioFormOptionsProps>(nextData, "ContactFormOptions");
+    const labelsEntry = PuckDataService.getEntryProps<ContactStudioLabelsProps>(nextData, "ContactUiLabels");
+    const visibilityEntry = PuckDataService.getEntryProps<ContactStudioVisibilityProps>(nextData, "ContactVisibility");
 
     const next = {
       ...draft,
@@ -612,15 +657,16 @@ export default function ContactStudioPage() {
         ) : null}
 
         <div className="min-w-0 overflow-hidden rounded-xl border border-border">
+          {/* Puck's Config generic requires exact field type matching incompatible with our dynamic config shape */}
           <Puck
-            config={config as any}
-            data={data as any}
+            config={config as Parameters<typeof Puck>[0]["config"]}
+            data={data as Parameters<typeof Puck>[0]["data"]}
             onPublish={onPublish}
             onChange={onChange}
             onAction={onAction}
-            plugins={plugins as any}
+            plugins={plugins as Parameters<typeof Puck>[0]["plugins"]}
             permissions={permissions}
-            viewports={viewports as any}
+            viewports={viewports as Parameters<typeof Puck>[0]["viewports"]}
             iframe={{ enabled: iframeEnabled, waitForStyles: iframeWaitForStyles }}
             headerTitle="Contact Content Studio"
             headerPath="/contact"

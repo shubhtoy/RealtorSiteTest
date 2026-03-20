@@ -3,6 +3,8 @@ import type { ImgHTMLAttributes } from "react";
 type OptimizedImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
   src: string;
   sizes?: string;
+  width?: number;
+  height?: number;
 };
 
 const RESPONSIVE_WIDTHS = [640, 1280, 1920] as const;
@@ -46,12 +48,17 @@ function buildSrcSet(base: string, format: "avif" | "webp"): string {
   return RESPONSIVE_WIDTHS.map((width) => `${resolveAssetPath(`${base}-${width}.${format}`)} ${width}w`).join(", ");
 }
 
-export function OptimizedImage({ src, alt, sizes = "100vw", loading = "lazy", decoding = "async", ...rest }: OptimizedImageProps) {
+export function OptimizedImage({ src, alt, sizes = "100vw", loading = "lazy", decoding = "async", width, height, style, ...rest }: OptimizedImageProps) {
   const optimizedBase = getOptimizedBase(src);
   const resolvedSrc = resolveAssetPath(src);
 
+  const imgStyle: React.CSSProperties = {
+    ...((!width || !height) ? { aspectRatio: "16 / 9" } : undefined),
+    ...style,
+  };
+
   if (!optimizedBase) {
-    return <img src={resolvedSrc} alt={alt} loading={loading} decoding={decoding} {...rest} />;
+    return <img src={resolvedSrc} alt={alt} loading={loading} decoding={decoding} width={width} height={height} style={imgStyle} {...rest} />;
   }
 
   const avifSet = buildSrcSet(optimizedBase, "avif");
@@ -61,7 +68,7 @@ export function OptimizedImage({ src, alt, sizes = "100vw", loading = "lazy", de
     <picture>
       <source type="image/avif" srcSet={avifSet} sizes={sizes} />
       <source type="image/webp" srcSet={webpSet} sizes={sizes} />
-      <img src={resolvedSrc} alt={alt} loading={loading} decoding={decoding} {...rest} />
+      <img src={resolvedSrc} alt={alt} loading={loading} decoding={decoding} width={width} height={height} style={imgStyle} {...rest} />
     </picture>
   );
 }

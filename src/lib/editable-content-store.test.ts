@@ -20,6 +20,7 @@ describe("editable-content-store validation", () => {
         ...defaultEditableSiteDocument.home,
         stats: [{ value: "100", suffix: "+", label: "Residents" }],
       },
+    // Intentionally malformed document for testing validation — double cast required
     } as unknown as typeof defaultEditableSiteDocument;
 
     const result = validateEditableSiteDocument(malformed);

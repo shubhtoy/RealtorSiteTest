@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { Link } from "react-router-dom";
 import Lightbox from "yet-another-react-lightbox";
 import Captions from "yet-another-react-lightbox/plugins/captions";
 import Counter from "yet-another-react-lightbox/plugins/counter";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import { Reveal } from "../components/motion";
-import { setPageMeta } from "../lib/seo";
+import { Reveal } from "@/lib/motion";
+import { setPageMeta } from "@/lib/seo";
 import { OptimizedImage } from "@/components/media/OptimizedImage";
 import { useEditableContent } from "@/context/EditableContentContext";
 import { resolveAppHref } from "@/lib/utils";
@@ -29,11 +29,12 @@ export default function GalleryPage() {
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
 
   useEffect(() => {
-    setPageMeta(
-      `${current.global.siteName} Gallery ${current.global.cityLabel}`,
-      `Explore interior, exterior, amenity, and floor plan photos from ${current.global.siteName} apartments in ${current.global.cityLabel}.`,
-      "/gallery",
-    );
+    setPageMeta({
+      title: `${current.global.siteName} Gallery ${current.global.cityLabel}`,
+      description: `Explore interior, exterior, amenity, and floor plan photos from ${current.global.siteName} apartments in ${current.global.cityLabel}.`,
+      canonicalPath: "/gallery",
+      ogImage: "/images/banner.png",
+    });
   }, [current.global.cityLabel, current.global.siteName]);
 
   const filteredItems = useMemo(() => {
@@ -57,7 +58,7 @@ export default function GalleryPage() {
   );
 
   return (
-    <main className="bg-body-mesh">
+    <main id="main-content" className="bg-body-mesh">
       {current.gallery.sectionVisibility.hero ? <section ref={heroRef} className="relative min-h-[46svh] overflow-hidden md:min-h-[52svh]">
         <motion.div style={{ y: reducedMotion ? 0 : heroY }} className="absolute inset-0 h-[116%] w-full">
           <OptimizedImage
@@ -107,7 +108,16 @@ export default function GalleryPage() {
               <figure
                 key={`${item.src}-${item.label}`}
                 className="group relative cursor-pointer overflow-hidden rounded-xl border border-border/60"
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${item.label} in lightbox`}
                 onClick={() => setLightboxIndex(index)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setLightboxIndex(index);
+                  }
+                }}
               >
                 <OptimizedImage
                   src={item.src}
