@@ -72,7 +72,7 @@ export default function HomePage() {
       home.amenityPanels.map((panel) => ({
         title: panel.title,
         description: panel.description,
-        content: <OptimizedImage src={panel.image} alt={panel.title} className="h-full w-full object-cover" sizes="(min-width: 1024px) 24rem, 100vw" />,
+        content: <OptimizedImage src={panel.image} alt={panel.title} className="h-full w-full object-cover" sizes="(max-width: 768px) 92vw, (max-width: 1024px) 50vw, 24rem" />,
       })),
     [home.amenityPanels],
   );
@@ -125,17 +125,17 @@ export default function HomePage() {
   const sectionTitleClass = "mt-2 font-display text-[1.9rem] leading-[1.08] md:text-5xl";
   const sectionCopyClass = "mx-auto mt-3 max-w-3xl text-[0.98rem] leading-relaxed text-muted-foreground md:text-[1.04rem]";
   const primaryButtonClass =
-    "inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:px-6 sm:py-3 sm:text-[0.68rem] sm:tracking-[0.16em]";
+    "inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 min-h-[44px] text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:px-6 sm:py-3 sm:text-[0.68rem] sm:tracking-[0.16em]";
   const secondaryButtonClass =
-    "inline-flex items-center justify-center rounded-full border border-primary/45 px-5 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary transition hover:-translate-y-0.5 hover:bg-primary/10 sm:px-6 sm:py-3 sm:text-[0.68rem] sm:tracking-[0.16em]";
+    "inline-flex items-center justify-center rounded-full border border-primary/45 px-5 py-2.5 min-h-[44px] text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary transition hover:-translate-y-0.5 hover:bg-primary/10 sm:px-6 sm:py-3 sm:text-[0.68rem] sm:tracking-[0.16em]";
 
   return (
-    <main id="main-content" className="bg-body-mesh pb-20 md:pb-0">
+    <main id="main-content" className="bg-body-mesh pb-24 md:pb-0">
       <section className="relative overflow-hidden bg-background pb-6">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.18),transparent_72%)]" />
         <div className="relative z-30 mx-auto w-[min(1140px,92vw)] pt-14 md:pt-20">
           <Reveal>
-            <div className="mx-auto max-w-4xl rounded-3xl border border-border/70 bg-card/90 p-5 text-center shadow-soft backdrop-blur md:p-8">
+            <div className="mx-auto max-w-4xl rounded-3xl border border-border/70 bg-card/90 p-4 text-center shadow-soft backdrop-blur md:p-8">
               <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-primary">{home.hero.tagline}</p>
               <h1 className="mt-3 font-display text-3xl leading-[1.04] text-foreground sm:text-4xl md:text-6xl">
                 {home.hero.title}
@@ -173,7 +173,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {home.sectionVisibility.stats ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.stats ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto grid w-[min(1140px,92vw)] grid-cols-2 gap-8 md:grid-cols-4">
           {home.stats.map((item) => (
             <StatCounter key={item.label} value={item.value} suffix={item.suffix} label={item.label} />
@@ -181,7 +181,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.residences ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.residences ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-10 text-center">
             <p className={eyebrowClass}>{home.ui.residencesEyebrow}</p>
@@ -194,7 +194,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.unitExplorer ? <section className="bg-secondary/30 py-16 md:py-24">
+      {home.sectionVisibility.unitExplorer ? <section className="bg-secondary/30 py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-6 text-center">
             <p className={eyebrowClass}>{home.ui.unitExplorerEyebrow}</p>
@@ -213,7 +213,7 @@ export default function HomePage() {
                   src={unit.image}
                   alt={unit.title}
                   className="h-44 w-full rounded-xl object-cover md:h-52"
-                  sizes="(min-width: 1024px) 30vw, 100vw"
+                  sizes="(max-width: 768px) 92vw, (max-width: 1024px) 30vw, 33vw"
                 />
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
@@ -243,7 +243,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.amenities ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.amenities ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-8 text-center">
             <p className={eyebrowClass}>{home.ui.amenitiesEyebrow}</p>
@@ -256,7 +256,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.why ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.why ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-4 text-center">
             <p className={eyebrowClass}>{home.ui.whyEyebrow}</p>
@@ -279,7 +279,7 @@ export default function HomePage() {
                   src={home.hero.heroRailMedia[1] ?? home.hero.heroRailMedia[0]}
                   alt="Baba Flats lifestyle"
                   className="h-56 w-full object-cover"
-                  sizes="(min-width: 1024px) 34vw, 100vw"
+                  sizes="(max-width: 768px) 92vw, (max-width: 1024px) 40vw, 34vw"
                 />
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.neighborhood ? <section className="bg-secondary/30 py-16 md:py-24">
+      {home.sectionVisibility.neighborhood ? <section className="bg-secondary/30 py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-8 text-center">
             <p className={eyebrowClass}>{home.neighborhood.eyebrow}</p>
@@ -335,7 +335,7 @@ export default function HomePage() {
                   src={home.hero.heroRailMedia[0]}
                   alt="Baba Flats neighborhood"
                   className="h-52 w-full object-cover"
-                  sizes="(min-width: 1024px) 34vw, 100vw"
+                  sizes="(max-width: 768px) 92vw, (max-width: 1024px) 40vw, 34vw"
                 />
               </div>
             </div>
@@ -361,7 +361,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.testimonials ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.testimonials ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-6 text-center">
             <p className={eyebrowClass}>{home.ui.testimonialsEyebrow}</p>
@@ -374,7 +374,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.faq ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.faq ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto w-[min(760px,92vw)]">
           <Reveal className="mb-8 text-center">
             <p className={eyebrowClass}>{home.ui.faqEyebrow}</p>
@@ -393,13 +393,13 @@ export default function HomePage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
                   href={resolveAppHref(home.finalCta.primary.link)}
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 min-h-[44px] text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
                 >
                   {home.ui.faqHelpPrimaryLabel}
                 </a>
                 <Link
                   to={home.finalCta.secondary.link}
-                  className="inline-flex items-center justify-center rounded-full border border-primary/35 px-4 py-2 text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-primary"
+                  className="inline-flex items-center justify-center rounded-full border border-primary/35 px-4 py-2 min-h-[44px] text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-primary"
                 >
                   {home.ui.faqHelpSecondaryLabel}
                 </Link>
@@ -425,7 +425,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.map ? <section className="bg-secondary/30 py-16 md:py-24">
+      {home.sectionVisibility.map ? <section className="bg-secondary/30 py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <Reveal className="mb-8 text-center">
             <p className={eyebrowClass}>{home.ui.mapEyebrow}</p>
@@ -458,7 +458,7 @@ export default function HomePage() {
         </div>
       </section> : null}
 
-      {home.sectionVisibility.finalCta ? <section className="bg-background py-16 md:py-24">
+      {home.sectionVisibility.finalCta ? <section className="bg-background py-12 md:py-24">
         <div className="mx-auto w-[min(1140px,92vw)]">
           <div className="rounded-2xl border border-border bg-panel-gradient p-6 shadow-soft md:p-8">
             <p className={eyebrowClass}>{home.finalCta.tagline}</p>
@@ -468,13 +468,13 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-3">
               <a
                 href={resolveAppHref(home.finalCta.primary.link)}
-                className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg"
+                className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 min-h-[44px] text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg"
               >
                 {home.finalCta.primary.text}
               </a>
               <Link
                 to={home.finalCta.secondary.link}
-                className="inline-flex items-center justify-center rounded-full border border-primary/60 px-5 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary transition hover:-translate-y-0.5 hover:bg-primary/8"
+                className="inline-flex items-center justify-center rounded-full border border-primary/60 px-5 py-2.5 min-h-[44px] text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary transition hover:-translate-y-0.5 hover:bg-primary/8"
               >
                 {home.finalCta.secondary.text}
               </Link>
@@ -487,13 +487,13 @@ export default function HomePage() {
         <div className="mx-auto flex w-[min(560px,96vw)] gap-2">
           <a
             href={resolveAppHref(home.finalCta.primary.link)}
-            className="flex-1 rounded-full bg-primary px-4 py-3 text-center text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
+            className="flex-1 rounded-full bg-primary px-4 py-3 min-h-[44px] inline-flex items-center justify-center text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
           >
             {home.ui.mobilePrimaryLabel}
           </a>
           <Link
             to={home.finalCta.secondary.link}
-            className="flex-1 rounded-full border border-primary px-4 py-3 text-center text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-primary"
+            className="flex-1 rounded-full border border-primary px-4 py-3 min-h-[44px] inline-flex items-center justify-center text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-primary"
           >
             {home.ui.mobileSecondaryLabel}
           </Link>

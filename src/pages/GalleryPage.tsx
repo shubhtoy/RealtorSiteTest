@@ -91,7 +91,7 @@ export default function GalleryPage() {
                   key={category}
                   type="button"
                   onClick={() => setActiveCategory(category)}
-                  className={`inline-flex items-center justify-center rounded-full px-3 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] transition-colors sm:px-4 sm:py-2 sm:text-[0.68rem] sm:tracking-[0.14em] ${
+                  className={`inline-flex items-center justify-center rounded-full px-3 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] transition-colors sm:px-4 sm:py-2 sm:text-[0.68rem] sm:tracking-[0.14em] ${
                     activeCategory === category
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/80"

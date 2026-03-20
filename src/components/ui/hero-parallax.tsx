@@ -66,7 +66,7 @@ export const HeroParallax = ({
     <div
       ref={ref}
       className={cn(
-        "relative flex h-[220vh] flex-col self-auto overflow-hidden py-24 antialiased [perspective:1000px] [transform-style:preserve-3d]",
+        "relative flex h-[70vh] md:h-[128vh] flex-col self-auto overflow-hidden py-24 antialiased [perspective:1000px] [transform-style:preserve-3d]",
         className,
       )}
     >
@@ -152,7 +152,7 @@ export const ProductCard = ({
         y: -20,
       }}
       key={product.title}
-      className={cn("group/product relative h-80 w-[24rem] shrink-0 md:h-96 md:w-[28rem]", className)}
+      className={cn("group/product relative h-80 w-[80vw] sm:w-[17.5rem] md:w-[24rem] shrink-0 md:h-96", className)}
     >
       <a
         href={resolveAppHref(product.link)}

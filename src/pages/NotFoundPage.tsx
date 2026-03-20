@@ -14,7 +14,7 @@ export default function NotFoundPage() {
   return (
     <main
       id="main-content"
-      className="mx-auto flex min-h-[60vh] w-[min(1140px,92vw)] flex-col items-center justify-center gap-4 py-24 text-center"
+      className="mx-auto flex min-h-[60vh] w-[min(1140px,92vw)] flex-col items-center justify-center gap-4 overflow-hidden py-24 text-center"
     >
       <h1 className="font-display text-4xl tracking-tight text-foreground md:text-5xl">
         Page Not Found

@@ -112,7 +112,7 @@ export default function ContactPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const inputCls = "h-10";
+  const inputCls = "h-11";
   const labelCls = "text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-accent";
 
   return (
@@ -140,8 +140,8 @@ export default function ContactPage() {
               <h1 className="mt-2 font-display text-2xl leading-[1.08] text-overlay-text sm:text-3xl md:text-5xl">{current.contact.heroTitle}</h1>
               <p className="mt-3 text-sm text-overlay-text/85 md:text-base">{current.contact.heroDescription}</p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <a href={`tel:${current.global.phone.replace(/\D/g, "")}`} className="inline-flex items-center justify-center rounded-full bg-overlay-text px-4 py-2 text-[0.64rem] font-extrabold uppercase tracking-[0.12em] text-overlay-dark shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:px-5 sm:py-2.5 sm:text-[0.72rem] sm:tracking-[0.14em]">{current.contact.ui.callButtonPrefix} {current.global.phone}</a>
-                <Link to="/gallery" className="inline-flex items-center justify-center rounded-full border-[1.5px] border-overlay-text/40 px-4 py-2 text-[0.64rem] font-extrabold uppercase tracking-[0.12em] text-overlay-text transition hover:-translate-y-0.5 hover:bg-overlay-text/10 sm:px-5 sm:py-2.5 sm:text-[0.72rem] sm:tracking-[0.14em]">{current.contact.ui.browseButtonText}</Link>
+                <a href={`tel:${current.global.phone.replace(/\D/g, "")}`} className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-overlay-text px-4 py-2 text-[0.64rem] font-extrabold uppercase tracking-[0.12em] text-overlay-dark shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:px-5 sm:py-2.5 sm:text-[0.72rem] sm:tracking-[0.14em]">{current.contact.ui.callButtonPrefix} {current.global.phone}</a>
+                <Link to="/gallery" className="inline-flex min-h-[44px] items-center justify-center rounded-full border-[1.5px] border-overlay-text/40 px-4 py-2 text-[0.64rem] font-extrabold uppercase tracking-[0.12em] text-overlay-text transition hover:-translate-y-0.5 hover:bg-overlay-text/10 sm:px-5 sm:py-2.5 sm:text-[0.72rem] sm:tracking-[0.14em]">{current.contact.ui.browseButtonText}</Link>
               </div>
             </div>
           </Reveal>
@@ -260,7 +260,7 @@ export default function ContactPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg disabled:cursor-not-allowed disabled:opacity-70 sm:w-max sm:text-[0.72rem] sm:tracking-[0.14em]"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full bg-primary px-5 py-2.5 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg disabled:cursor-not-allowed disabled:opacity-70 sm:w-max sm:text-[0.72rem] sm:tracking-[0.14em]"
               >
                 {isSubmitting ? "Sending..." : current.contact.submitText}
               </button>

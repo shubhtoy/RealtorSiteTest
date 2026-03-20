@@ -54,7 +54,7 @@ export default function SiteHeader() {
           <Link
             data-prop="cta"
             to={current.global.navCtaLink}
-            className="inline-flex items-center justify-center rounded-full bg-primary px-3.5 py-2 text-[0.6rem] font-extrabold uppercase tracking-[0.12em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:px-4 sm:text-[0.65rem] sm:tracking-[0.14em]"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-3.5 py-2 min-h-[44px] whitespace-nowrap text-[0.6rem] font-extrabold uppercase tracking-[0.12em] text-primary-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-lg sm:px-4 sm:text-[0.65rem] sm:tracking-[0.14em]"
           >
             {current.global.navCtaText}
           </Link>
@@ -67,7 +67,7 @@ export default function SiteHeader() {
               to={link.to}
               end={link.end}
               className={({ isActive }) =>
-                `rounded-full px-2.5 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.1em] transition-colors sm:px-3 sm:text-[0.62rem] sm:tracking-[0.12em] ${
+                `rounded-full px-2.5 py-2.5 min-h-[44px] inline-flex items-center text-[0.58rem] font-semibold uppercase tracking-[0.1em] transition-colors sm:px-3 sm:text-[0.62rem] sm:tracking-[0.12em] ${
                   isActive ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                 }`
               }
